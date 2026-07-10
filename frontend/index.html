@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+
+<html lang="fr"> <head> <meta charset="UTF-8"> <title>Kubernetes Chat Rooms</title>
+
+<style> body { font-family: Arial, sans-serif; background: #111827; color: white; margin: 0; padding: 20px; } .container { max-width: 800px; margin: auto; } .card { background: #1f2937; padding: 20px; border-radius: 10px; margin-top: 20px; } input, button { padding: 10px; margin-top: 10px; border-radius: 5px; border: none; } input { width: calc(100% - 20px); } button { cursor: pointer; background: #2563eb; color: white; } button:hover { background: #1d4ed8; } .hidden { display: none; } #messages { height: 300px; overflow-y: auto; background: black; padding: 10px; border-radius: 5px; } .message { margin-bottom: 5px; } .host { color: #22c55e; } .info { color: #93c5fd; } #error { color: red; } </style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>🎮 Kubernetes Chat Rooms</h1>
+
+<!-- LOBBY -->
+
+<div id="lobby" class="card">
+
+<h2>Créer une room</h2>
+
+<button onclick="createRoom()"> Créer </button>
+
+<h2>Rejoindre une room</h2>
+
+<input id="roomId" placeholder="ID de la room" />
+
+<button onclick="joinRoom()"> Rejoindre </button>
+
+<p id="createResult"></p>
+
+</div>
+
+
+
+
+<!-- ROOM -->
+
+<div id="room" class="card hidden">
+
+<h2> Room : <span id="roomName"></span> </h2>
+
+<div id="messages"></div>
+
+<input id="messageInput" placeholder="Message" />
+
+<button onclick="sendMessage()"> Envoyer </button>
+
+<div> <br>
+
+<input id="hostKey" placeholder="Host key (optionnel)" />
+
+<button onclick="authenticateHost()"> Devenir host </button>
+
+</div>
+
+<button onclick="leaveRoom()"> Quitter </button>
+
+</div>
+
+<div id="error"></div>
+
+</div>
+
+
+
+<script src="config.js"></script>
+<script>
+//
+// Configuration
+//
+
+const BACKEND_URL = "https://" + window.APP_CONFIG.BACKEND_URL;
+
+let websocket = null;
+let currentRoom = null;
+
+
+
+//
+// Création room
+//
+
+async function createRoom() {
+
+    try {
+
+        const response = await fetch(
+            BACKEND_URL + "/create-room",
+            {
+                method: "POST"
+            }
+        );
+
+
+        const data = await response.json();
+
+
+        document.getElementById("createResult").innerHTML =
+        `
+        Room créée : <b>${data.instance}</b><br>
+        Host key :
+        <b>${data.host_key}</b>
+        `;
+
+
+        joinRoom(data.instance);
+
+    }
+    catch (e) {
+
+        showError(e);
+
+    }
+
+}
+
+
+
+//
+// Rejoindre une room
+//
+
+function joinRoom(id = null) {
+
+    const room =
+        id ||
+        document.getElementById("roomId").value;
+
+
+    if (!room) {
+        return;
+    }
+
+
+    currentRoom = room;
+
+
+    document
+        .getElementById("lobby")
+        .classList
+        .add("hidden");
+
+
+    document
+        .getElementById("room")
+        .classList
+        .remove("hidden");
+
+
+    document.getElementById("roomName")
+        .innerText = room;
+
+
+    connectWebsocket(room);
+
+}
+
+
+
+//
+// Connexion WebSocket
+//
+
+function connectWebsocket(room) {
+
+
+    const protocol =
+        window.location.protocol === "https:"
+            ? "wss://"
+            : "ws://";
+
+
+    websocket = new WebSocket(
+        protocol +
+        window.APP_CONFIG.BACKEND_URL +
+        "/" +
+        room
+    );
+
+
+    websocket.onopen = () => {
+
+        addMessage(
+            "Connecté à la room",
+            "info"
+        );
+
+    };
+
+
+    websocket.onmessage = event => {
+
+        addMessage(
+            event.data
+        );
+
+    };
+
+
+    websocket.onclose = () => {
+
+        addMessage(
+            "Connexion fermée",
+            "info"
+        );
+
+    };
+
+
+    websocket.onerror = () => {
+
+        addMessage(
+            "Erreur websocket",
+            "info"
+        );
+
+    };
+
+}
+
+
+
+//
+// Envoi message
+//
+
+function sendMessage() {
+
+    const input =
+        document.getElementById("messageInput");
+
+
+    if (
+        websocket &&
+        websocket.readyState === WebSocket.OPEN
+    ) {
+
+        websocket.send(input.value);
+
+        input.value = "";
+
+    }
+
+}
+
+
+
+//
+// Authentification host
+//
+
+function authenticateHost() {
+
+    const key =
+        document.getElementById("hostKey").value;
+
+
+    if (
+        websocket &&
+        websocket.readyState === WebSocket.OPEN
+    ) {
+
+        websocket.send(key);
+
+    }
+
+}
+
+
+
+//
+// Affichage messages
+//
+
+function addMessage(
+    msg,
+    type = ""
+) {
+
+    const div =
+        document.createElement("div");
+
+
+    div.className =
+        "message " + type;
+
+
+    div.innerText =
+        msg;
+
+
+    document
+        .getElementById("messages")
+        .appendChild(div);
+
+}
+
+
+
+//
+// Quitter la room
+//
+
+function leaveRoom() {
+
+    if (websocket) {
+
+        websocket.close();
+
+    }
+
+
+    document
+        .getElementById("room")
+        .classList
+        .add("hidden");
+
+
+    document
+        .getElementById("lobby")
+        .classList
+        .remove("hidden");
+
+}
+
+
+
+//
+// Gestion erreur
+//
+
+function showError(e) {
+
+    document
+        .getElementById("error")
+        .innerText = e;
+
+}
+</script>
+
+
+</body> </html>

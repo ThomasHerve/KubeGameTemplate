@@ -2,7 +2,9 @@ name: 'Frontend'
 
 on:
   push:
-    branches: [ main ]
+    branches: 
+      - main
+      - feature/**
     paths:
       - frontend/**
 
@@ -17,4 +19,4 @@ jobs:
     - name: Connect to dockerhub
       run: docker login -u ${{secrets.DOCKER_LOGIN}} -p ${{secrets.DOCKER_PASSWORD}}
     - name: Build the Docker image
-      run: cd frontend && docker build . -t ${{secrets.DOCKER_LOGIN}}/asymetric-unity-frontend --output type=registry
+      run: cd frontend && docker build . -t ${{secrets.DOCKER_LOGIN}}/kube-game-frontend --output type=registry

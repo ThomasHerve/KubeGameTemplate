@@ -2,7 +2,9 @@ name: 'Instance'
 
 on:
   push:
-    branches: [ main ]
+    branches: 
+      - main
+      - feature/**
     paths:
       - instance/**
 
@@ -17,4 +19,4 @@ jobs:
     - name: Connect to dockerhub
       run: docker login -u ${{secrets.DOCKER_LOGIN}} -p ${{secrets.DOCKER_PASSWORD}}
     - name: Build the Docker image
-      run: docker build . --file instance/Dockerfile -t ${{secrets.DOCKER_LOGIN}}/asymetric-unity-instance --output type=registry
+      run: docker build . --file instance/Dockerfile -t ${{secrets.DOCKER_LOGIN}}/kube-game-instance --output type=registry

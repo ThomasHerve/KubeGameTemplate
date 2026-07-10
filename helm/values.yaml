@@ -5,7 +5,7 @@
 namespace: asyncunity
 
 image:
-  repository: thomasherve/asymetric-unity-core
+  repository: thomasherve/kube-game-core
   password:
   pullPolicy: Always
   tag: "latest"
@@ -18,13 +18,13 @@ image:
     targetMemoryUtilizationPercentage: 80
 
 instance:
-  repository: thomasherve/asymetric-unity-instance
+  repository: thomasherve/kube-game-instance
   pullPolicy: Always
   tag: "latest"
   enabled: false 
 
 frontend:
-  repository: thomasherve/asymetric-unity-frontend
+  repository: thomasherve/kube-game-frontend
   pullPolicy: Always
   tag: "latest"
   port: 80

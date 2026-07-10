@@ -20,18 +20,15 @@ async def handler(websocket, path):
                 if server is None:
                     server = websocket
                     print("found")
-                    await websocket.send("Vous êtes maintenant le serveur.")
+                    await websocket.send("Vous êtes maintenant le gestionnaire de la partie.")
                 else:
-                    await websocket.send("Il y a déjà un serveur.")
+                    await websocket.send("Il y a déjà un gestionnaire de la partie.")
             else:
-                if websocket == server and len(clients) > 1:
+                if len(clients) > 1:
                     try:
-                        await asyncio.wait([client.send(message) for client in clients if client != server])
+                        await asyncio.wait([client.send(message) for client in clients if client != websocket])
                     finally:
                         pass
-                else:
-                    if server is not None:
-                        await server.send(message)
     except websockets.exceptions.ConnectionClosedError as e:
         print(f"Connexion fermée avec l'erreur : {e}")
     except Exception as e:
