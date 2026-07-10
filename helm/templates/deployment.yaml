@@ -132,6 +132,8 @@ spec:
             {{- with (index .Values.ingress.hosts 0) }}
             value: {{ .host }}
             {{- end }}
+          - name: BACKEND_PROTOCOL
+            value: {{ .Values.frontend.backendProtocol | default "https" }}
           ports:
             - name: http
               containerPort: {{ .Values.frontend.port }}

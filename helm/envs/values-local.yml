@@ -26,6 +26,7 @@ instance:
 frontend:
   repository: thomasherve/kube-game-frontend
   pullPolicy: Always
+  backendProtocol: "http"
   tag: "latest"
   port: 80
   replicaCount: 1
