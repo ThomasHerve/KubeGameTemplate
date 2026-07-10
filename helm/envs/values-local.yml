@@ -7,7 +7,7 @@ namespace: operator
 image:
   repository: thomasherve/kube-game-core
   password: testpassword
-  extension: /
+  extension: ""
   pullPolicy: Always
   tag: "latest"
   replicaCount: 1
