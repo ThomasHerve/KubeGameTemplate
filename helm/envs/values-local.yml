@@ -83,12 +83,12 @@ ingress:
   className: traefik
   hosts:
     - host: operator.backend.local
-      path:  /()(.*)
+      path:  /
       pathType: Prefix
       name: core
       port: 8000
     - host: operator.frontend.local
-      path:  /()(.*)
+      path:  /
       pathType: Prefix
       name: frontend
       port: 80
