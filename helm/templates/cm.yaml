@@ -14,7 +14,7 @@ data:
     contexts:
     - context:
         cluster: kubernetes
-        namespace: asyncunity
+        namespace: {{ .Values.namespace }}
         user: kubernetes-admin
       name: kubernetes-admin@kubernetes
     current-context: kubernetes-admin@kubernetes
