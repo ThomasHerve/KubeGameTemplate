@@ -48,6 +48,10 @@ redis:
       cpu: 100m
       memory: 100Mi
 
+imagePullSecrets:
+  name: thomashervecredentials
+  dockerconfigjson: ""
+
 nameOverride: ""
 fullnameOverride: ""
 
@@ -80,18 +84,31 @@ service:
 ingress:
   name: core
   enabled: true
-  className: traefik
+  className: nginx
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    nginx.ingress.kubernetes.io/ssl-redirect: 'false'
+    nginx.ingress.kubernetes.io/use-regex: 'true'
   hosts:
-    - host: operator.backend.local
+    - host: asyncunitycore.multiplayertournamentonline.fr
       path:  /()(.*)
       pathType: Prefix
       name: core
       port: 8000
-    - host: operator.frontend.local
+    - host: asyncunityfrontend.multiplayertournamentonline.fr
       path:  /()(.*)
       pathType: Prefix
       name: frontend
       port: 80
+    - host: sgj2024.multiplayertournamentonline.fr
+      path:  /()(.*)
+      pathType: Prefix
+      name: instance-fixe
+      port: 8000
+  tls: 
+    - secretName: ingress-cert
+      hosts:
+        - multiplayertournamentonline.fr
 
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious
