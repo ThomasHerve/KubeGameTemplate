@@ -54,6 +54,10 @@ spec:
             value: "{{ .Values.redis.port }}"
           - name: EXTENSION
             value: {{ .Values.image.extension }}
+          - name: EXTERNAL_PORT
+            value: "{{ .Values.instance.externalPort }}"
+          - name: INTERNAL_PORT
+            value: "{{ .Values.instance.internalPort }}"
           ports:
             - name: http
               containerPort: 8000

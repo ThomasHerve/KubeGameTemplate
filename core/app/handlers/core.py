@@ -37,6 +37,8 @@ def create_room():
     ingress = os.environ["KUBERNETES_INGRESS_NAME"]
     port = int(os.environ["KUBERNETES_PORT"])
     extension = os.environ["EXTENSION"]
+    external_port = int(os.environ["EXTERNAL_PORT"])
+    internal_port = int(os.environ["INTERNAL_PORT"])
 
     # Random pod id
     pod_id = ''.join(random.choice(string.ascii_lowercase) for i in range(10)) 
@@ -62,7 +64,7 @@ def create_room():
     v1.create_namespaced_pod(namespace=namespace , body=pod_body)
 
     # Create a service
-    service_port_list = [client.V1ServicePort(port=port, target_port=port, name='http')]
+    service_port_list = [client.V1ServicePort(port=external_port, target_port=internal_port, name='http')]
     service_spec = client.V1ServiceSpec(ports=service_port_list, selector={
         "pod_id": pod_id
     })

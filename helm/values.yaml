@@ -23,6 +23,8 @@ instance:
   pullPolicy: Always
   tag: "latest"
   enabled: false 
+  externalPort: 80
+  internalPort: 8000
 
 frontend:
   repository: thomasherve/kube-game-frontend
