@@ -6,6 +6,7 @@ import redis
 import time
 import uuid
 
+
 class RedisLock:
     def __init__(self, client, lock_key, lock_timeout=10):
         self.client = client
