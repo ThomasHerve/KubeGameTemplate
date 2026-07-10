@@ -161,7 +161,10 @@ function joinRoom(id = null) {
 // Connexion WebSocket
 //
 
-function connectWebsocket(room) {
+async function connectWebsocket(room, attempt = 1) {
+
+    const maxAttempts = 5;
+    const retryDelay = 5000;
 
 
     const protocol =
@@ -170,12 +173,20 @@ function connectWebsocket(room) {
             : "ws://";
 
 
-    websocket = new WebSocket(
+    const url =
         protocol +
         window.APP_CONFIG.BACKEND_URL +
         "/" +
-        room
+        room;
+
+
+    addMessage(
+        `Connexion websocket (${attempt}/${maxAttempts})...`,
+        "info"
     );
+
+
+    websocket = new WebSocket(url);
 
 
     websocket.onopen = () => {
@@ -197,16 +208,6 @@ function connectWebsocket(room) {
     };
 
 
-    websocket.onclose = () => {
-
-        addMessage(
-            "Connexion fermée",
-            "info"
-        );
-
-    };
-
-
     websocket.onerror = () => {
 
         addMessage(
@@ -216,8 +217,41 @@ function connectWebsocket(room) {
 
     };
 
-}
 
+    websocket.onclose = async (event) => {
+
+        // Si la connexion n'a jamais réussi
+        if (attempt < maxAttempts) {
+
+            addMessage(
+                `Serveur non prêt, nouvel essai dans ${retryDelay / 1000}s...`,
+                "info"
+            );
+
+
+            await new Promise(
+                resolve => setTimeout(resolve, retryDelay)
+            );
+
+
+            connectWebsocket(
+                room,
+                attempt + 1
+            );
+
+        }
+        else {
+
+            addMessage(
+                "Impossible de joindre la room après plusieurs tentatives",
+                "info"
+            );
+
+        }
+
+    };
+
+}
 
 
 //
