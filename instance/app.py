@@ -10,7 +10,7 @@ print(host_key)
 clients = set()
 server = None
 
-async def handler(websocket, path):
+async def handler(websocket):
     global server
     clients.add(websocket)
     try:
@@ -26,7 +26,13 @@ async def handler(websocket, path):
             else:
                 if len(clients) > 1:
                     try:
-                        await asyncio.wait([client.send(message) for client in clients if client != websocket])
+                        await asyncio.gather(
+                                *[
+                                    client.send(message)
+                                    for client in clients
+                                    if client != websocket
+                                ]
+                            )
                     finally:
                         pass
     except websockets.exceptions.ConnectionClosedError as e:
