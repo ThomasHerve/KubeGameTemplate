@@ -41,7 +41,7 @@ spec:
           - name: KUBERNETES_INGRESS_NAME
             value: "{{ .Values.ingress.name }}"
           - name: KUBERNETES_PORT
-            value: "{{ .Values.service.port }}"
+            value: "{{ .Values.instance.externalPort }}"
           - name: BACKEND_URL
             {{- with (index .Values.ingress.hosts 0) }}
             value: {{ .host }}
