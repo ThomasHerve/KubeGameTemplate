@@ -24,8 +24,6 @@ spec:
         app.kubernetes.io/instance: asyncunitytemplate
         app.kubernetes.io/name: core
     spec:
-      imagePullSecrets:
-      - name: {{ .Values.imagePullSecrets.name }}
       serviceAccountName: {{ include "helm.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
@@ -120,8 +118,6 @@ spec:
         app.kubernetes.io/instance: asyncunitytemplate
         app.kubernetes.io/name: frontend
     spec:
-      imagePullSecrets:
-      - name: {{ .Values.imagePullSecrets.name }}
       serviceAccountName: {{ include "helm.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
@@ -180,8 +176,6 @@ spec:
         app.kubernetes.io/instance: asyncunitytemplate
         app.kubernetes.io/name: instance-fixe
     spec:
-      imagePullSecrets:
-      - name: {{ .Values.imagePullSecrets.name }}
       serviceAccountName: {{ include "helm.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
