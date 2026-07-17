@@ -233,6 +233,7 @@ def delete_room(body):
     v1.delete_namespaced_service(namespace=namespace, name='instance-'+body["instance"])
 
     # Remove HTTPRoute entry if enabled
+    http_route_enabled = os.environ.get("HTTP_ROUTE_ENABLED", "false").lower() == "true"
     if http_route_enabled:
         try:
             delete_http_route(namespace, f"instance-{body['instance']}")
