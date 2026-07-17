@@ -51,7 +51,7 @@ def create_room():
 
     # Create a pod
     containers = []
-    container1 = client.V1Container(name='instance', image=image, env=[client.V1EnvVar(name="INSTANCE_NAME", value=pod_id), client.V1EnvVar(name="BACKEND_URL", value=os.environ["BACKEND_URL"]), client.V1EnvVar(name="PASSWORD", value=os.environ["PASSWORD"]), client.V1EnvVar(name="HOST_KEY", value=host_key)])
+    container1 = client.V1Container(name='instance', image=image, env=[client.V1EnvVar(name="INSTANCE_NAME", value=pod_id), client.V1EnvVar(name="BACKEND_URL", value=os.environ["BACKEND_SERVICE_NAME"] + "." + namespace + ".svc.cluster.local:" + str(os.environ["BACKEND_SERVICE_PORT"])), client.V1EnvVar(name="PASSWORD", value=os.environ["PASSWORD"]), client.V1EnvVar(name="HOST_KEY", value=host_key)])
     containers.append(container1)
 
     pod_spec = client.V1PodSpec(containers=containers)
