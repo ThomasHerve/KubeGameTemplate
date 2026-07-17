@@ -73,9 +73,7 @@ async def handler(websocket):
         if websocket == server:
             server = None
         if nickname:
-            print(f"{nickname} a quitté la room.")
             await broadcast(f"{nickname} a quitté la room.", exclude=websocket)
-        print(f"Clients restants : {len(clients)}")
         if len(clients) == 0:
             stop()
 
@@ -85,7 +83,6 @@ async def main():
 
 
 def stop():
-    print("Arrêt du serveur WebSocket car il n'y a plus de clients connectés.")
     instance_name = os.environ["INSTANCE_NAME"]
     backend_url = os.environ["BACKEND_URL"]
     password = os.environ["PASSWORD"]
