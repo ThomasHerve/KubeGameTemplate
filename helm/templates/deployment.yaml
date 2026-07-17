@@ -40,6 +40,10 @@ spec:
             value: "{{ .Values.namespace }}"
           - name: KUBERNETES_INGRESS_NAME
             value: "{{ .Values.ingress.name }}"
+          - name: KUBERNETES_SERVICE_NAME
+            value: core
+          - name: KUBERNETES_SERVICE_PORT
+            value: "{{ .Values.service.port }}"
           - name: KUBERNETES_PORT
             value: "{{ .Values.instance.externalPort }}"
           - name: BACKEND_URL
