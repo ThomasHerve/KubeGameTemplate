@@ -1,5 +1,6 @@
 import os
 import asyncio
+import json
 import requests
 import websockets
 
@@ -24,17 +25,25 @@ async def handler(websocket):
                 else:
                     await websocket.send("Il y a déjà un gestionnaire de la partie.")
             else:
-                if len(clients) > 1:
+                try:
+                    broadcast_message = message
                     try:
-                        await asyncio.gather(
-                                *[
-                                    client.send(message)
-                                    for client in clients
-                                    if client != websocket
-                                ]
-                            )
-                    finally:
+                        payload = json.loads(message)
+                        if isinstance(payload, dict) and "nickname" in payload and "text" in payload:
+                            nickname = str(payload.get("nickname", "")).strip() or "Anonyme"
+                            text = str(payload.get("text", ""))
+                            broadcast_message = f"{nickname}: {text}"
+                    except json.JSONDecodeError:
                         pass
+
+                    await asyncio.gather(
+                        *[
+                            client.send(broadcast_message)
+                            for client in clients
+                        ]
+                    )
+                finally:
+                    pass
     except websockets.exceptions.ConnectionClosedError as e:
         print(f"Connexion fermée avec l'erreur : {e}")
     except Exception as e:
