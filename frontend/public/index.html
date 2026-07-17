@@ -16,6 +16,10 @@
 
 <div id="lobby" class="card">
 
+<h2>Quel pseudo voulez-vous utiliser ?</h2>
+
+<input id="nickname" placeholder="Pseudo" />
+
 <h2>Créer une room</h2>
 
 <button onclick="createRoom()"> Créer </button>
@@ -39,9 +43,9 @@
 
 <h2> Room : <span id="roomName"></span> </h2>
 
-<div id="messages"></div>
+<div>Pseudo : <strong id="currentNickname"></strong></div>
 
-<input id="nicknameInput" placeholder="Pseudo" />
+<div id="messages"></div>
 
 <input id="messageInput" placeholder="Message" />
 
@@ -75,6 +79,7 @@ const BACKEND_URL = window.APP_CONFIG.BACKEND_PROTOCOL + "://" + window.APP_CONF
 
 let websocket = null;
 let currentRoom = null;
+let userNickname = "";
 
 
 
@@ -127,31 +132,36 @@ function joinRoom(id = null) {
     const room =
         id ||
         document.getElementById("roomId").value;
+    const nickname =
+        document.getElementById("nickname").value.trim();
 
-
-    if (!room) {
+    if (!nickname) {
+        showError("Choisissez un pseudo avant de rejoindre la room.");
         return;
     }
 
+    if (!room) {
+        showError("Indiquez l'ID de la room.");
+        return;
+    }
 
+    userNickname = nickname;
     currentRoom = room;
-
 
     document
         .getElementById("lobby")
         .classList
         .add("hidden");
 
-
     document
         .getElementById("room")
         .classList
         .remove("hidden");
 
-
     document.getElementById("roomName")
         .innerText = room;
-
+    document.getElementById("currentNickname")
+        .innerText = userNickname;
 
     connectWebsocket(room);
 
@@ -197,6 +207,13 @@ async function connectWebsocket(room, attempt = 1) {
             "Connecté à la room",
             "info"
         );
+
+        if (userNickname) {
+            websocket.send(JSON.stringify({
+                type: "join",
+                nickname: userNickname
+            }));
+        }
 
     };
 
@@ -262,12 +279,9 @@ async function connectWebsocket(room, attempt = 1) {
 
 function sendMessage() {
 
-    const nicknameInput =
-        document.getElementById("nicknameInput");
     const messageInput =
         document.getElementById("messageInput");
 
-    const nickname = nicknameInput.value.trim() || "Anonyme";
     const text = messageInput.value.trim();
 
     if (!text) {
@@ -280,7 +294,7 @@ function sendMessage() {
     ) {
 
         websocket.send(JSON.stringify({
-            nickname,
+            type: "message",
             text
         }));
 
@@ -353,6 +367,7 @@ function leaveRoom() {
     if (websocket) {
 
         websocket.close();
+        websocket = null;
 
     }
 
