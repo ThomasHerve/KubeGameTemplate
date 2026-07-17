@@ -51,3 +51,34 @@ redis:
       cpu: 100m
       memory: 100Mi
 
+service:
+  type: ClusterIP
+  port: 8000
+
+ingress:
+  name: core
+  enabled: true
+  className: traefik
+  annotations: {}
+  hosts:
+    - host: operator.backend.local
+      path: /
+      pathType: Prefix
+      name: core
+      port: 8000
+    - host: operator.frontend.local
+      path: /
+      pathType: Prefix
+      name: frontend
+      port: 80
+  tls: []
+
+httpRoute:
+  enabled: false
+  annotations: {}
+  parentRefs: []
+  hostnames: []
+  rules: []
+  gatewayName: ""
+  gatewayNamespace: ""
+

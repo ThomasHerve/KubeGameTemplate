@@ -47,9 +47,23 @@ spec:
           - name: KUBERNETES_PORT
             value: "{{ .Values.instance.externalPort }}"
           - name: BACKEND_URL
+            {{- if and .Values.httpRoute.enabled (gt (len .Values.httpRoute.hostnames) 0) }}
+            value: {{ index .Values.httpRoute.hostnames 0 }}
+            {{- else }}
             {{- with (index .Values.ingress.hosts 0) }}
             value: {{ .host }}
             {{- end }}
+            {{- end }}
+          - name: HTTP_ROUTE_ENABLED
+            value: "{{ .Values.httpRoute.enabled }}"
+          - name: GATEWAY_NAME
+            value: "{{ .Values.httpRoute.gatewayName }}"
+          - name: GATEWAY_NAMESPACE
+            value: "{{ .Values.httpRoute.gatewayNamespace }}"
+          - name: GATEWAY_HOSTNAMES
+            value: "{{ join "," .Values.httpRoute.hostnames }}"
+          - name: HTTP_ROUTE_PATH_PREFIX
+            value: "{{ .Values.httpRoute.pathPrefix }}"
           - name: PASSWORD
             value: {{ .Values.image.password }}
           - name: REDIS_URL
@@ -139,11 +153,23 @@ spec:
           imagePullPolicy: {{ .Values.frontend.pullPolicy }}
           env:
           - name: BACKEND_URL
+            {{- if and .Values.httpRoute.enabled (gt (len .Values.httpRoute.hostnames) 0) }}
+            value: {{ index .Values.httpRoute.hostnames 0 }}
+            {{- else }}
             {{- with (index .Values.ingress.hosts 0) }}
             value: {{ .host }}
             {{- end }}
+            {{- end }}
           - name: BACKEND_PROTOCOL
             value: {{ .Values.frontend.backendProtocol | default "https" }}
+          - name: HTTP_ROUTE_ENABLED
+            value: "{{ .Values.httpRoute.enabled }}"
+          - name: GATEWAY_NAME
+            value: "{{ .Values.httpRoute.gatewayName }}"
+          - name: GATEWAY_NAMESPACE
+            value: "{{ .Values.httpRoute.gatewayNamespace }}"
+          - name: GATEWAY_HOSTNAMES
+            value: "{{ join "," .Values.httpRoute.hostnames }}"
           ports:
             - name: http
               containerPort: {{ .Values.frontend.port }}
@@ -211,9 +237,21 @@ spec:
           - name: KUBERNETES_PORT
             value: "{{ .Values.service.port }}"
           - name: BACKEND_URL
+            {{- if and .Values.httpRoute.enabled (gt (len .Values.httpRoute.hostnames) 0) }}
+            value: {{ index .Values.httpRoute.hostnames 0 }}
+            {{- else }}
             {{- with (index .Values.ingress.hosts 0) }}
             value: {{ .host }}
             {{- end }}
+            {{- end }}
+          - name: HTTP_ROUTE_ENABLED
+            value: "{{ .Values.httpRoute.enabled }}"
+          - name: GATEWAY_NAME
+            value: "{{ .Values.httpRoute.gatewayName }}"
+          - name: GATEWAY_NAMESPACE
+            value: "{{ .Values.httpRoute.gatewayNamespace }}"
+          - name: GATEWAY_HOSTNAMES
+            value: "{{ join "," .Values.httpRoute.hostnames }}"
           - name: PASSWORD
             value: {{ .Values.image.password }}
           ports:

@@ -29,16 +29,92 @@ redis_client = redis.StrictRedis(host=os.environ["REDIS_URL"], port=int(os.envir
 
 lock = RedisLock(redis_client, 'lock')
 
+
+def create_http_route(namespace, route_name, service_name, service_port, hostnames, path_prefix, gateway_name, gateway_namespace):
+    api = client.CustomObjectsApi()
+    if path_prefix is None:
+        path_prefix = "/"
+    if not path_prefix.startswith("/"):
+        path_prefix = "/" + path_prefix
+    path_prefix = path_prefix.rstrip("/")
+    route_path = f"{path_prefix}/{route_name.replace('instance-', '')}"
+
+    route_body = {
+        "apiVersion": "gateway.networking.k8s.io/v1",
+        "kind": "HTTPRoute",
+        "metadata": {
+            "name": route_name,
+            "namespace": namespace,
+        },
+        "spec": {
+            "hostnames": hostnames,
+            "rules": [
+                {
+                    "matches": [
+                        {
+                            "path": {
+                                "type": "PathPrefix",
+                                "value": route_path,
+                            }
+                        }
+                    ],
+                    "backendRefs": [
+                        {
+                            "name": service_name,
+                            "port": service_port,
+                            "weight": 1,
+                        }
+                    ],
+                }
+            ],
+        }
+    }
+
+    if gateway_name and gateway_namespace:
+        route_body["spec"]["parentRefs"] = [
+            {
+                "name": gateway_name,
+                "namespace": gateway_namespace,
+            }
+        ]
+
+    api.create_namespaced_custom_object(
+        group="gateway.networking.k8s.io",
+        version="v1",
+        namespace=namespace,
+        plural="httproutes",
+        body=route_body,
+    )
+    return route_path
+
+
+def delete_http_route(namespace, route_name):
+    api = client.CustomObjectsApi()
+    api.delete_namespaced_custom_object(
+        group="gateway.networking.k8s.io",
+        version="v1",
+        namespace=namespace,
+        plural="httproutes",
+        name=route_name,
+        body={},
+    )
+
+
 @hug.post('/create-room')
 def create_room():
 
     image = os.environ["INSTANCE_IMAGE"]
     namespace = os.environ["KUBERNETES_NAMESPACE"]
-    ingress = os.environ["KUBERNETES_INGRESS_NAME"]
+    ingress = os.environ.get("KUBERNETES_INGRESS_NAME", "")
     port = int(os.environ["KUBERNETES_PORT"])
     extension = os.environ["EXTENSION"]
     external_port = int(os.environ["EXTERNAL_PORT"])
     internal_port = int(os.environ["INTERNAL_PORT"])
+    http_route_enabled = os.environ.get("HTTP_ROUTE_ENABLED", "false").lower() == "true"
+    gateway_name = os.environ.get("GATEWAY_NAME", "")
+    gateway_namespace = os.environ.get("GATEWAY_NAMESPACE", "")
+    route_hostnames = [h for h in os.environ.get("GATEWAY_HOSTNAMES", "").split(",") if h.strip()]
+    route_path_prefix = os.environ.get("HTTP_ROUTE_PATH_PREFIX", "/")
 
     # Random pod id
     pod_id = ''.join(random.choice(string.ascii_lowercase) for i in range(10)) 
@@ -73,23 +149,45 @@ def create_room():
     
     v1.create_namespaced_service(namespace=namespace , body=service)
 
-    # Update the ingress class
-    # Needs a general lock on the ressource
-    if lock.acquire_lock():
+    route_path = None
+    if http_route_enabled:
         try:
-            networking = client.NetworkingV1Api()
+            route_name = f"instance-{pod_id}"
+            route_path = create_http_route(
+                namespace=namespace,
+                route_name=route_name,
+                service_name=f"instance-{pod_id}",
+                service_port=port,
+                hostnames=route_hostnames,
+                path_prefix=route_path_prefix,
+                gateway_name=gateway_name,
+                gateway_namespace=gateway_namespace,
+            )
+        except Exception:
+            route_path = None
 
-            current_ingress = networking.read_namespaced_ingress(name=ingress, namespace=namespace)
-            current_ingress_paths = current_ingress.spec.rules[0].http.paths
-            current_ingress_paths.append(client.V1HTTPIngressPath(path=f"/{pod_id}{extension}", path_type="Prefix", backend=client.V1IngressBackend(service=client.V1IngressServiceBackend(name=f"instance-{pod_id}", port=client.V1ServiceBackendPort(number=port)))))
-            current_ingress.spec.rules[0].http.paths = current_ingress_paths
+    # Update the ingress class if HTTPRoute is not available or disabled
+    if not http_route_enabled and ingress:
+        if lock.acquire_lock():
+            try:
+                networking = client.NetworkingV1Api()
 
-            networking.patch_namespaced_ingress(ingress, namespace, current_ingress)
-        finally:
-            lock.release_lock() 
+                current_ingress = networking.read_namespaced_ingress(name=ingress, namespace=namespace)
+                current_ingress_paths = current_ingress.spec.rules[0].http.paths
+                current_ingress_paths.append(client.V1HTTPIngressPath(path=f"/{pod_id}{extension}", path_type="Prefix", backend=client.V1IngressBackend(service=client.V1IngressServiceBackend(name=f"instance-{pod_id}", port=client.V1ServiceBackendPort(number=port)))))
+                current_ingress.spec.rules[0].http.paths = current_ingress_paths
+
+                networking.patch_namespaced_ingress(ingress, namespace, current_ingress)
+            finally:
+                lock.release_lock()
 
     # QR code
-    url = value=os.environ["BACKEND_URL"] + "/" + pod_id
+    if http_route_enabled and route_path:
+        base_url = route_hostnames[0] if route_hostnames else os.environ.get("BACKEND_URL", "")
+        url = f"{base_url}{route_path}"
+    else:
+        url = os.environ["BACKEND_URL"] + "/" + pod_id
+
     qr = qrcode.QRCode(
         version=1,
         error_correction=qrcode.constants.ERROR_CORRECT_L,
@@ -134,17 +232,25 @@ def delete_room(body):
     v1.delete_namespaced_pod(namespace=namespace, name='instance-'+body["instance"])
     v1.delete_namespaced_service(namespace=namespace, name='instance-'+body["instance"])
 
-    # Remove ingress entry
-    if lock.acquire_lock():
+    # Remove HTTPRoute entry if enabled
+    if http_route_enabled:
         try:
-            networking = client.NetworkingV1Api()
-            current_ingress = networking.read_namespaced_ingress(name=ingress, namespace=namespace)
-            current_ingress_paths = current_ingress.spec.rules[0].http.paths
-            current_ingress_paths = list(filter(lambda x: x.backend.service.name != f"instance-{body['instance']}", current_ingress_paths))
-            current_ingress.spec.rules[0].http.paths = current_ingress_paths
+            delete_http_route(namespace, f"instance-{body['instance']}")
+        except Exception:
+            pass
 
-            networking.patch_namespaced_ingress(ingress, namespace, current_ingress)
-        finally:
-            lock.release_lock() 
+    # Remove ingress entry if HTTPRoute is not enabled
+    elif ingress:
+        if lock.acquire_lock():
+            try:
+                networking = client.NetworkingV1Api()
+                current_ingress = networking.read_namespaced_ingress(name=ingress, namespace=namespace)
+                current_ingress_paths = current_ingress.spec.rules[0].http.paths
+                current_ingress_paths = list(filter(lambda x: x.backend.service.name != f"instance-{body['instance']}", current_ingress_paths))
+                current_ingress.spec.rules[0].http.paths = current_ingress_paths
+
+                networking.patch_namespaced_ingress(ingress, namespace, current_ingress)
+            finally:
+                lock.release_lock()
 
     return "Ok"
