@@ -10,7 +10,7 @@ spec:
     - name: {{ $dot.Values.httpRoute.gatewayName }}
       namespace: {{ $dot.Values.httpRoute.gatewayNamespace }}
   hostnames:
-    {{- toYaml .host | nindent 4 }}
+    - {{ .host }}
   rules:
     - matches:
       rules:
