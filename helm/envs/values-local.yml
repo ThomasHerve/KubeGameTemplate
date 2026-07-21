@@ -120,18 +120,22 @@ secrets:
   kubeaddress: 149.202.55.61
 
 httpRoute:
+  gatewayName: operator-gateway
+  gatewayNamespace: operator
   enabled: true
 
-  parentRefs:
-    - name: operator-gateway
-      namespace: operator
+  hosts:
+    - host: operator.backend.local
+      rules:
+      - matches:
+          - path:
+              type: PathPrefix
+              value: /
+    - host: operator.frontend.local
+      rules:
+      - matches:
+          - path:
+              type: PathPrefix
+              value: /
 
-  hostnames:
-    - operator.frontend.local
-    - operator.backend.local
-
-  rules:
-    - matches:
-        - path:
-            type: PathPrefix
-            value: /
+ 

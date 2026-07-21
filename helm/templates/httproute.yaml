@@ -1,5 +1,6 @@
 {{- if .Values.httpRoute.enabled -}}
-{{- $svcPort := .Values.service.port -}}
+{{ $dot := . }}
+{{- range .Values.httpRoute.hosts }}
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
@@ -11,29 +12,19 @@ metadata:
 spec:
   {{- if and .Values.httpRoute.gatewayName .Values.httpRoute.gatewayNamespace }}
   parentRefs:
-    - name: {{ .Values.httpRoute.gatewayName }}
-      namespace: {{ .Values.httpRoute.gatewayNamespace }}
-  {{- else if .Values.httpRoute.parentRefs }}
-  parentRefs:
-    {{- toYaml .Values.httpRoute.parentRefs | nindent 4 }}
+    - name: {{ $dot.Values.httpRoute.gatewayName }}
+      namespace: {{ $dot.Values.httpRoute.gatewayNamespace }}
   {{- end }}
-  {{- if .Values.httpRoute.hostnames }}
   hostnames:
-    {{- toYaml .Values.httpRoute.hostnames | nindent 4 }}
-  {{- end }}
+    {{- toYaml .host | nindent 4 }}
   rules:
-    {{- range .Values.httpRoute.rules }}
-    {{- with .matches }}
+    {{- range .rules }}
     - matches:
-      {{- toYaml . | nindent 8 }}
-    {{- end }}
-    {{- with .filters }}
-      filters:
-      {{- toYaml . | nindent 8 }}
-    {{- end }}
+        {{- range .matches }}
       backendRefs:
         - name: operator-gateway
-          port: {{ $svcPort }}
+          port: 80
           weight: 1
     {{- end }}
 {{- end }}
+{{- end -}}

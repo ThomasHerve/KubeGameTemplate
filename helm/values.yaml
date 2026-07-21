@@ -76,9 +76,7 @@ ingress:
 httpRoute:
   enabled: false
   annotations: {}
-  parentRefs: []
-  hostnames: []
-  rules: []
+  hosts: []
   gatewayName: ""
   gatewayNamespace: ""
 
