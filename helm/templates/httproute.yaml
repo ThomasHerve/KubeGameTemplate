@@ -20,7 +20,7 @@ spec:
       backendRefs:
         - name: {{ .service }}
           kind: Service
-          port: 80
+          port: {{ .port }}
           weight: 1
 {{- end }}
 {{- end -}}
