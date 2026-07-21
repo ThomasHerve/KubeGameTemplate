@@ -10,4 +10,4 @@ rules:
   - apiGroups: ["apps.thomas-herve.fr"]
     resources: ["gameinstancesmanagers", "gameinstancesmanagers/status", "gameinstancesmanagers/finalizers"]
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
-{{- end}}
+{{- end }}
