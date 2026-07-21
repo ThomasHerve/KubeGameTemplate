@@ -81,7 +81,7 @@ httpRoute:
   gatewayNamespace: ""
 
 operator:
-  replicas: 0
+  replicas: 1
   clusterScoped: true
   watchNamespace: operator
   image:
@@ -91,3 +91,5 @@ operator:
   resources:
     requests: { cpu: 50m, memory: 64Mi }
     limits: { memory: 128Mi }
+
+legacy: false

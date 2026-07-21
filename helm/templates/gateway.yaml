@@ -1,3 +1,4 @@
+{{- if .Values.legacy }}
 {{- if .Values.httpRoute.enabled -}}
 
 apiVersion: gateway.networking.k8s.io/v1
@@ -21,3 +22,4 @@ spec:
         from: All
 
 {{- end -}}
+{{- end }}

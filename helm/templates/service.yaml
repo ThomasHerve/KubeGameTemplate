@@ -1,3 +1,4 @@
+{{ if .Values.legacy }}
 apiVersion: v1
 kind: Service
 metadata:
@@ -67,4 +68,5 @@ spec:
   selector:
     app.kubernetes.io/instance: asyncunitytemplate
     app.kubernetes.io/name: redis
+{{- end }}
 {{- end }}

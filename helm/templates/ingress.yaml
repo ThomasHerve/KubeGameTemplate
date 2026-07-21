@@ -1,3 +1,4 @@
+{{- if .Values.legacy }}
 {{- if .Values.ingress.enabled -}}
 {{- $fullName := include "helm.fullname" . -}}
 {{- $svcPort := .Values.service.port -}}
@@ -49,4 +50,5 @@ spec:
                 port:
                   number: {{ .port }}
     {{- end }}
+{{- end }}
 {{- end }}

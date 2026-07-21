@@ -1,3 +1,4 @@
+{{ if .Values.legacy}}
 {{- if .Values.httpRoute.enabled -}}
 {{ $dot := . }}
 {{- range .Values.httpRoute.hosts }}
@@ -24,3 +25,4 @@ spec:
           weight: 1
 {{- end }}
 {{- end -}}
+{{- end }}

@@ -1,3 +1,4 @@
+{{- if .Values.legacy }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -26,3 +27,4 @@ data:
         client-certificate-data: {{ .Values.secrets.clientcertificatedata }}
         client-key-data: {{ .Values.secrets.clientkeydata }}
 
+{{- end }}
