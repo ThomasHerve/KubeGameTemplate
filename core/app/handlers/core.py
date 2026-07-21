@@ -148,7 +148,7 @@ def create_room():
     
     v1.create_namespaced_service(namespace=namespace , body=service)
     
-    route_path_prefix = f"/{pod_id}"
+    route_path_prefix = ""
 
     route_path = None
     if http_route_enabled:
