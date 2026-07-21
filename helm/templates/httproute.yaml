@@ -20,7 +20,11 @@ spec:
   rules:
     {{- range .rules }}
     - matches:
-        {{- range .matches }}
+      rules:
+      - matches:
+          - path:
+              type: PathPrefix
+              value: /
       backendRefs:
         - name: operator-gateway
           port: 80

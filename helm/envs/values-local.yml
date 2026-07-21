@@ -126,16 +126,7 @@ httpRoute:
 
   hosts:
     - host: operator.backend.local
-      rules:
-      - matches:
-          - path:
-              type: PathPrefix
-              value: /
     - host: operator.frontend.local
-      rules:
-      - matches:
-          - path:
-              type: PathPrefix
-              value: /
+
 
  
