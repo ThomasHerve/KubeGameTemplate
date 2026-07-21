@@ -33,8 +33,8 @@ spec:
       {{- toYaml . | nindent 8 }}
     {{- end }}
       backendRefs:
-        - name: {{ include "helm.fullname" . }}
-          port: {{ $.Values.service.port }}
+        - name: {{ $fullname }}
+          port: {{ $svcPort }}
           weight: 1
     {{- end }}
 {{- end }}
