@@ -1,6 +1,6 @@
 {{- if .Values.real_operator }}
 apiVersion: apps.thomas-herve.fr/v1alpha1
-kind: GameInstanceManager
+kind: GameInstancesManager
 metadata:
   name: asyncunitytemplate
   namespace: default
