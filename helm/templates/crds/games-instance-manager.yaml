@@ -2,6 +2,7 @@
 apiVersion: apps.thomas-herve.fr/v1alpha1
 kind: GameInstancesManager
 metadata:
+  name: operator-game-manager
   namespace: {{ .Values.namespace }}
 spec:
   frontend:
