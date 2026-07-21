@@ -1,4 +1,4 @@
-{{- if not .Values.real_operator -}}
+{{- if .Values.real_operator -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
