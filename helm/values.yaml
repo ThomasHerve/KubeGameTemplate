@@ -82,3 +82,14 @@ httpRoute:
   gatewayName: ""
   gatewayNamespace: ""
 
+operator:
+  replicas: 1
+  clusterScoped: true
+  watchNamespace: operator
+  image:
+    repository: docker.io/thomasherve/kube-game-operator
+    tag: dev
+    pullPolicy: Always
+  resources:
+    requests: { cpu: 50m, memory: 64Mi }
+    limits: { memory: 128Mi }

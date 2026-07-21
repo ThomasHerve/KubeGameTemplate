@@ -1,0 +1,9 @@
+apiVersion: apps.thomas-herve.fr/v1alpha1
+kind: GameInstancesManager
+metadata:
+  labels:
+    app.kubernetes.io/name: mon-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: gameinstancesmanager-sample
+spec:
+  # TODO(user): Add fields here
