@@ -5,7 +5,6 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "-1"
 rules:
-  # colle ici les rules générées par `make manifests` dans config/rbac/role.yaml
   - apiGroups: ["apps.thomas-herve.fr"]
     resources: ["gameinstancesmanagers", "gameinstancesmanagers/status", "gameinstancesmanagers/finalizers"]
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
