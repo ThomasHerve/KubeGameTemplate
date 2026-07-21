@@ -2,13 +2,12 @@
 apiVersion: apps.thomas-herve.fr/v1alpha1
 kind: GameInstancesManager
 metadata:
-  name: asyncunitytemplate
   namespace: {{ .Values.namespace }}
 spec:
   frontend:
     repository: {{ .Values.frontend.repository }}
     tag: {{ .Values.frontend.tag | default .Chart.AppVersion }}
-    pullPolicy: IfNotPresent
+    pullPolicy: Always
     replicas: 1
     port: {{ .Values.frontend.port }}
     backendURL: {{ (index .Values.httpRoute.hosts 0).host }}
