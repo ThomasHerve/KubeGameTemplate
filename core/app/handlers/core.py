@@ -113,8 +113,7 @@ def create_room():
     http_route_enabled = os.environ.get("HTTP_ROUTE_ENABLED", "false").lower() == "true"
     gateway_name = os.environ.get("GATEWAY_NAME", "")
     gateway_namespace = os.environ.get("GATEWAY_NAMESPACE", "")
-    route_hostnames = [h for h in os.environ.get("GATEWAY_HOSTNAMES", "").split(",") if h.strip()]
-    route_path_prefix = os.environ.get("HTTP_ROUTE_PATH_PREFIX", "/")
+    route_hostnames = [os.environ.get("BACKEND_URL", "")]
 
     # Random pod id
     pod_id = ''.join(random.choice(string.ascii_lowercase) for i in range(10)) 
@@ -148,6 +147,8 @@ def create_room():
     service = client.V1Service(metadata=service_metadata, spec=service_spec)
     
     v1.create_namespaced_service(namespace=namespace , body=service)
+    
+    route_path_prefix = f"/{pod_id}"
 
     route_path = None
     if http_route_enabled:
