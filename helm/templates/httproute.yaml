@@ -13,13 +13,12 @@ spec:
     - {{ .host }}
   rules:
     - matches:
-      rules:
-      - matches:
           - path:
               type: PathPrefix
               value: /
       backendRefs:
-        - name: operator-gateway
+        - name: {{ .service }}.{{ $dot.Values.namespace }}.svc.cluster.local
+          kind: Service
           port: 80
           weight: 1
 {{- end }}
