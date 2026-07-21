@@ -6,11 +6,9 @@ kind: HTTPRoute
 metadata:
   name: httproute-operator
 spec:
-  {{- if and .Values.httpRoute.gatewayName .Values.httpRoute.gatewayNamespace }}
   parentRefs:
     - name: {{ $dot.Values.httpRoute.gatewayName }}
       namespace: {{ $dot.Values.httpRoute.gatewayNamespace }}
-  {{- end }}
   hostnames:
     {{- toYaml .host | nindent 4 }}
   rules:
