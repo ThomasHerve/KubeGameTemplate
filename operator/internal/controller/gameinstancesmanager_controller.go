@@ -25,6 +25,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -59,6 +60,16 @@ func (r *GameInstancesManagerReconciler) Reconcile(ctx context.Context, req ctrl
 		}
 		return ctrl.Result{}, err
 	}
+
+	if err := r.reconcileFrontendServiceAccount(ctx, &gim); err != nil {
+		logger.Error(err, "failed to reconcile frontend serviceaccount")
+		return ctrl.Result{}, err
+	}
+ 
+	if err := r.reconcileFrontendService(ctx, &gim); err != nil {
+		logger.Error(err, "failed to reconcile frontend service")
+		return ctrl.Result{}, err
+	}
  
 	if err := r.reconcileFrontendDeployment(ctx, &gim); err != nil {
 		logger.Error(err, "failed to reconcile frontend deployment")
@@ -66,6 +77,53 @@ func (r *GameInstancesManagerReconciler) Reconcile(ctx context.Context, req ctrl
 	}
  
 	return ctrl.Result{}, nil
+}
+
+func (r *GameInstancesManagerReconciler) reconcileFrontendServiceAccount(ctx context.Context, gim *appsv1alpha1.GameInstancesManager) error {
+	// Si l'utilisateur a fourni un SA existant via le Spec, on ne le gère pas
+	// (il est censé exister déjà, potentiellement en dehors du scope de l'operator).
+	if gim.Spec.Frontend.ServiceAccountName != "" {
+		return nil
+	}
+ 
+	sa := &corev1.ServiceAccount{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      serviceAccountName(gim),
+			Namespace: gim.Namespace,
+		},
+	}
+ 
+	_, err := controllerutil.CreateOrUpdate(ctx, r.Client, sa, func() error {
+		sa.Labels = frontendLabels(gim)
+		return controllerutil.SetControllerReference(gim, sa, r.Scheme)
+	})
+	return err
+}
+ 
+func (r *GameInstancesManagerReconciler) reconcileFrontendService(ctx context.Context, gim *appsv1alpha1.GameInstancesManager) error {
+	svc := &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      deploymentName(gim, frontendComponent),
+			Namespace: gim.Namespace,
+		},
+	}
+ 
+	_, err := controllerutil.CreateOrUpdate(ctx, r.Client, svc, func() error {
+		labels := frontendLabels(gim)
+		svc.Labels = labels
+		svc.Spec.Selector = labels
+		svc.Spec.Type = corev1.ServiceTypeClusterIP
+		svc.Spec.Ports = []corev1.ServicePort{
+			{
+				Name:       "http",
+				Port:       gim.Spec.Frontend.Port,
+				TargetPort: intstrFromPort(gim.Spec.Frontend.Port),
+				Protocol:   corev1.ProtocolTCP,
+			},
+		}
+		return controllerutil.SetControllerReference(gim, svc, r.Scheme)
+	})
+	return err
 }
 
 func (r *GameInstancesManagerReconciler) reconcileFrontendDeployment(ctx context.Context, gim *appsv1alpha1.GameInstancesManager) error {
@@ -153,6 +211,10 @@ func frontendLabels(gim *appsv1alpha1.GameInstancesManager) map[string]string {
  
 func int32Ptr(i int32) *int32 { return &i }
  
+func intstrFromPort(port int32) intstr.IntOrString {
+	return intstr.FromInt32(port)
+}
+
 func defaultString(v, def string) string {
 	if v == "" {
 		return def
@@ -164,6 +226,8 @@ func defaultString(v, def string) string {
 func (r *GameInstancesManagerReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&appsv1alpha1.GameInstancesManager{}).
-		Named("gameinstancesmanager").
+		Owns(&appsv1.Deployment{}).      // ré-déclenche Reconcile si le Deployment est modifié/supprimé manuellement
+		Owns(&corev1.ServiceAccount{}).
+		Owns(&corev1.Service{}).
 		Complete(r)
 }
