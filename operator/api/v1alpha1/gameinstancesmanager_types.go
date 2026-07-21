@@ -31,11 +31,25 @@ type GameInstancesManagerSpec struct {
 
 	// Foo is an example field of GameInstancesManager. Edit gameinstancesmanager_types.go to remove/update
 	Frontend FrontendSpec `json:"frontend"`
+
+	HTTPRoute HTTPRouteSpec `json:"http_route"`
+}
+
+type HTTPRouteSpec struct {
+	// +kubebuilder:validation:Required
+	GatewayName string `json:"gatewayName"`
+
+	// +kubebuilder:validation:Required
+	GatewayNamespace string `json:"gatewayNamespace"`
 }
 
 type FrontendSpec struct {
+	// +optional
+	// +kubebuilder:default=true
+	Enabled bool `json:"enabled,omitempty"`
+
 	// Image repository, e.g. ghcr.io/org/frontend
-	// +kubebuilder:validation:Required
+	// +optional
 	Repository string `json:"repository"`
  
 	// Image tag. Defaults to "latest" if empty.
@@ -56,11 +70,15 @@ type FrontendSpec struct {
 	// +optional
 	// +kubebuilder:default=8080
 	Port int32 `json:"port,omitempty"`
- 
-	// Backend URL injected as the BACKEND_URL env var.
-	// TODO: once Ingress/HTTPRoute are managed by this operator too,
-	// this could be deduced instead of being user-provided.
-	// +kubebuilder:validation:Required
+	
+	// +optional
+	// +kubebuilder:default=80
+	ExternalPort int32 `json:"externalport,omitempty"`
+
+	// +optional
+	Hostname string `json:"hostname"`
+
+	// +optional
 	BackendURL string `json:"backendURL"`
  
 	// Backend protocol, defaults to https

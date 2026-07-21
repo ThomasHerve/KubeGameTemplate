@@ -53,9 +53,15 @@ spec:
                     description: Backend protocol, defaults to https
                     type: string
                   backendURL:
-                    description: |-
-                      Backend URL injected as the BACKEND_URL env var.
-                      this could be deduced instead of being user-provided.
+                    type: string
+                  enabled:
+                    default: true
+                    type: boolean
+                  externalport:
+                    default: 80
+                    format: int32
+                    type: integer
+                  hostname:
                     type: string
                   httpRouteEnabled:
                     description: Whether HTTPRoute is enabled (exposed as HTTP_ROUTE_ENABLED
@@ -324,7 +330,7 @@ spec:
                           Claims lists the names of resources, defined in spec.resourceClaims,
                           that are used by this container.
 
-                          This is an alpha field and requires enabling the
+                          This field depends on the
                           DynamicResourceAllocation feature gate.
 
                           This field is immutable. It can only be set for containers.
@@ -450,7 +456,6 @@ spec:
                           procMount denotes the type of proc mount to use for the containers.
                           The default value is Default which uses the container runtime defaults for
                           readonly paths and masked paths.
-                          This requires the ProcMountType feature flag to be enabled.
                           Note that this field cannot be set when spec.os.name is windows.
                         type: string
                       readOnlyRootFilesystem:
@@ -578,12 +583,20 @@ spec:
                   tag:
                     description: Image tag. Defaults to "latest" if empty.
                     type: string
+                type: object
+              http_route:
+                properties:
+                  gatewayName:
+                    type: string
+                  gatewayNamespace:
+                    type: string
                 required:
-                - backendURL
-                - repository
+                - gatewayName
+                - gatewayNamespace
                 type: object
             required:
             - frontend
+            - http_route
             type: object
           status:
             description: GameInstancesManagerStatus defines the observed state of

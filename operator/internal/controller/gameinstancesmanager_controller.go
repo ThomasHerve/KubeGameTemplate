@@ -30,7 +30,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
- 
+	
+	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
+
 	appsv1alpha1 "github.com/ThomasHerve/KubeGameTemplate/api/v1alpha1"
 )
 
@@ -61,19 +63,26 @@ func (r *GameInstancesManagerReconciler) Reconcile(ctx context.Context, req ctrl
 		return ctrl.Result{}, err
 	}
 
-	if err := r.reconcileFrontendServiceAccount(ctx, &gim); err != nil {
-		logger.Error(err, "failed to reconcile frontend serviceaccount")
-		return ctrl.Result{}, err
-	}
- 
-	if err := r.reconcileFrontendService(ctx, &gim); err != nil {
-		logger.Error(err, "failed to reconcile frontend service")
-		return ctrl.Result{}, err
-	}
- 
-	if err := r.reconcileFrontendDeployment(ctx, &gim); err != nil {
-		logger.Error(err, "failed to reconcile frontend deployment")
-		return ctrl.Result{}, err
+	if gim.Spec.Frontend.Enabled {
+		if err := r.reconcileFrontendServiceAccount(ctx, &gim); err != nil {
+			logger.Error(err, "failed to reconcile frontend serviceaccount")
+			return ctrl.Result{}, err
+		}
+	
+		if err := r.reconcileFrontendService(ctx, &gim); err != nil {
+			logger.Error(err, "failed to reconcile frontend service")
+			return ctrl.Result{}, err
+		}
+	
+		if err := r.reconcileFrontendDeployment(ctx, &gim); err != nil {
+			logger.Error(err, "failed to reconcile frontend deployment")
+			return ctrl.Result{}, err
+		}
+
+		if err := r.reconcileFrontendHTTPRoute(ctx, &gim); err != nil {
+			logger.Error(err, "failed to reconcile http route deployment")
+			return ctrl.Result{}, err
+		}
 	}
  
 	return ctrl.Result{}, nil
@@ -116,13 +125,82 @@ func (r *GameInstancesManagerReconciler) reconcileFrontendService(ctx context.Co
 		svc.Spec.Ports = []corev1.ServicePort{
 			{
 				Name:       "http",
-				Port:       gim.Spec.Frontend.Port,
+				Port:       gim.Spec.Frontend.ExternalPort,
 				TargetPort: intstrFromPort(gim.Spec.Frontend.Port),
 				Protocol:   corev1.ProtocolTCP,
 			},
 		}
 		return controllerutil.SetControllerReference(gim, svc, r.Scheme)
 	})
+	return err
+}
+
+func (r *GameInstancesManagerReconciler) reconcileFrontendHTTPRoute(ctx context.Context, gim *appsv1alpha1.GameInstancesManager) error {
+	httpRoute := &gatewayv1.HTTPRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      deploymentName(gim, frontendComponent),
+			Namespace: gim.Namespace,
+		},
+	}
+
+	_, err := controllerutil.CreateOrUpdate(ctx, r.Client, httpRoute, func() error {
+		httpRoute.Labels = frontendLabels(gim)
+
+		httpRoute.Spec = gatewayv1.HTTPRouteSpec{
+			CommonRouteSpec: gatewayv1.CommonRouteSpec{
+				ParentRefs: []gatewayv1.ParentReference{
+					{
+						Name:      gatewayv1.ObjectName(gim.Spec.HTTPRoute.GatewayName),
+						Namespace: func() *gatewayv1.Namespace {
+							ns := gatewayv1.Namespace(gim.Spec.HTTPRoute.GatewayNamespace)
+							return &ns
+						}(),
+					},
+				},
+			},
+			Hostnames: []gatewayv1.Hostname{
+				gatewayv1.Hostname(gim.Spec.Frontend.Hostname),
+			},
+			Rules: []gatewayv1.HTTPRouteRule{
+				{
+					Matches: []gatewayv1.HTTPRouteMatch{
+						{
+							Path: &gatewayv1.HTTPPathMatch{
+								Type: func() *gatewayv1.PathMatchType {
+									t := gatewayv1.PathMatchPathPrefix
+									return &t
+								}(),
+								Value: func() *string {
+									v := "/"
+									return &v
+								}(),
+							},
+						},
+					},
+					BackendRefs: []gatewayv1.HTTPBackendRef{
+						{
+							BackendRef: gatewayv1.BackendRef{
+								BackendObjectReference: gatewayv1.BackendObjectReference{
+									Name: gatewayv1.ObjectName(deploymentName(gim, frontendComponent)),
+									Port: func() *gatewayv1.PortNumber {
+										p := gatewayv1.PortNumber(gim.Spec.Frontend.ExternalPort)
+										return &p
+									}(),
+								},
+								Weight: func() *int32 {
+									w := int32(1)
+									return &w
+								}(),
+							},
+						},
+					},
+				},
+			},
+		}
+
+		return controllerutil.SetControllerReference(gim, httpRoute, r.Scheme)
+	})
+
 	return err
 }
 

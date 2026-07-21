@@ -5,12 +5,18 @@ metadata:
   name: operator-game-manager
   namespace: {{ .Values.namespace }}
 spec:
+  http_route:
+    gatewayName: operator-gateway
+    GatewayNamespace: {{ .Values.namespace }}
   frontend:
+    enabled: true
+    hostname: operator.frontend.local
     repository: {{ .Values.frontend.repository }}
     tag: {{ .Values.frontend.tag | default .Chart.AppVersion }}
     pullPolicy: Always
     replicas: 1
     port: {{ .Values.frontend.port }}
+    externalport: {{ .Values.frontend.port }}
     backendURL: {{ (index .Values.httpRoute.hosts 0).host }}
     backendProtocol: https
     httpRouteEnabled: false
