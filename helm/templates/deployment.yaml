@@ -149,8 +149,8 @@ spec:
           imagePullPolicy: {{ .Values.frontend.pullPolicy }}
           env:
           - name: BACKEND_URL
-            {{- if and .Values.httpRoute.enabled (gt (len .Values.httpRoute.hostnames) 0) }}
-            value: {{ index .Values.httpRoute.hostnames 0 }}
+            {{- if and .Values.httpRoute.enabled (gt (len .Values.httpRoute.hosts) 0) }}
+            value: {{ (index .Values.httpRoute.hosts 0).host }}
             {{- else }}
             {{- with (index .Values.ingress.hosts 0) }}
             value: {{ .host }}
@@ -160,12 +160,6 @@ spec:
             value: {{ .Values.frontend.backendProtocol | default "https" }}
           - name: HTTP_ROUTE_ENABLED
             value: "{{ .Values.httpRoute.enabled }}"
-          - name: GATEWAY_NAME
-            value: "{{ .Values.httpRoute.gatewayName }}"
-          - name: GATEWAY_NAMESPACE
-            value: "{{ .Values.httpRoute.gatewayNamespace }}"
-          - name: GATEWAY_HOSTNAMES
-            value: "{{ join "," .Values.httpRoute.hostnames }}"
           ports:
             - name: http
               containerPort: {{ .Values.frontend.port }}
