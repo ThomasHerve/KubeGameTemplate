@@ -1,0 +1,23 @@
+{{- if .Values.httpRoute.enabled -}}
+
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+
+metadata:
+  name: operator-gateway
+  namespace: {{ .Values.namespace }}
+
+spec:
+  gatewayClassName: traefik
+
+  listeners:
+
+  - name: http
+    protocol: HTTP
+    port: 80
+
+    allowedRoutes:
+      namespaces:
+        from: All
+
+{{- end -}}

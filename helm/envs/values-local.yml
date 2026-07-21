@@ -81,7 +81,7 @@ service:
 
 ingress:
   name: core
-  enabled: true
+  enabled: false
   className: traefik
   hosts:
     - host: operator.backend.local
@@ -118,3 +118,20 @@ secrets:
   clientcertificatedata:
   clientkeydata:
   kubeaddress: 149.202.55.61
+
+httpRoute:
+  enabled: true
+
+  parentRefs:
+    - name: operator-gateway
+      namespace: operator
+
+  hostnames:
+    - operator.frontend.local
+    - operator.backend.local
+
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
