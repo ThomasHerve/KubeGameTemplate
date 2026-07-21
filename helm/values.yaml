@@ -83,7 +83,7 @@ httpRoute:
   gatewayNamespace: ""
 
 operator:
-  replicas: 1
+  replicas: 0
   clusterScoped: true
   watchNamespace: operator
   image:
