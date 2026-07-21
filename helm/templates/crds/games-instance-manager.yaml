@@ -1,5 +1,5 @@
 {{- if .Values.real_operator }}
-apiVersion: apps.example.com/v1alpha1
+apiVersion: apps.thomas-herve.fr/v1alpha1
 kind: GameInstanceManager
 metadata:
   name: asyncunitytemplate
