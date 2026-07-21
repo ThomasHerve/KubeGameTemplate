@@ -3,7 +3,7 @@ apiVersion: apps.thomas-herve.fr/v1alpha1
 kind: GameInstancesManager
 metadata:
   name: asyncunitytemplate
-  namespace: default
+  namespace: {{ .Values.namespace }}
 spec:
   frontend:
     repository: {{ .Values.frontend.repository }}

@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -29,17 +30,77 @@ type GameInstancesManagerSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// Foo is an example field of GameInstancesManager. Edit gameinstancesmanager_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	Frontend FrontendSpec `json:"frontend"`
+}
+
+type FrontendSpec struct {
+	// Image repository, e.g. ghcr.io/org/frontend
+	// +kubebuilder:validation:Required
+	Repository string `json:"repository"`
+ 
+	// Image tag. Defaults to "latest" if empty.
+	// +optional
+	Tag string `json:"tag,omitempty"`
+ 
+	// +optional
+	// +kubebuilder:default=IfNotPresent
+	PullPolicy corev1.PullPolicy `json:"pullPolicy,omitempty"`
+ 
+	// Number of replicas. Left nil-friendly for future autoscaling support
+	// (equivalent to the Helm `{{- if not autoscaling.enabled }}` guard).
+	// +optional
+	// +kubebuilder:default=1
+	Replicas *int32 `json:"replicas,omitempty"`
+ 
+	// Container port exposed by the frontend
+	// +optional
+	// +kubebuilder:default=8080
+	Port int32 `json:"port,omitempty"`
+ 
+	// Backend URL injected as the BACKEND_URL env var.
+	// TODO: once Ingress/HTTPRoute are managed by this operator too,
+	// this could be deduced instead of being user-provided.
+	// +kubebuilder:validation:Required
+	BackendURL string `json:"backendURL"`
+ 
+	// Backend protocol, defaults to https
+	// +optional
+	// +kubebuilder:default=https
+	BackendProtocol string `json:"backendProtocol,omitempty"`
+ 
+	// Whether HTTPRoute is enabled (exposed as HTTP_ROUTE_ENABLED env var)
+	// +optional
+	HTTPRouteEnabled bool `json:"httpRouteEnabled,omitempty"`
+ 
+	// Optional: override the ServiceAccount name. If empty, the operator
+	// derives it from the GameInstancesManager name (<name>-sa).
+	// +optional
+	ServiceAccountName string `json:"serviceAccountName,omitempty"`
+ 
+	// Pod-level security context. Left free-form so callers can satisfy
+	// either OpenShift's restricted SCC or a vanilla Kubernetes policy.
+	// +optional
+	PodSecurityContext *corev1.PodSecurityContext `json:"podSecurityContext,omitempty"`
+ 
+	// +optional
+	SecurityContext *corev1.SecurityContext `json:"securityContext,omitempty"`
+ 
+	// +optional
+	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 // GameInstancesManagerStatus defines the observed state of GameInstancesManager.
 type GameInstancesManagerStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// +optional
+	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
+ 
+	// +optional
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="Ready",type=string,JSONPath=`.status.conditions[?(@.type=="Ready")].status`
 
 // GameInstancesManager is the Schema for the gameinstancesmanagers API.
 type GameInstancesManager struct {
