@@ -93,4 +93,4 @@ operator:
     limits: { memory: 128Mi }
 
 legacy: false
-real_operator: false
+real_operator: true
