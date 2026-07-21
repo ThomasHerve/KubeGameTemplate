@@ -17,7 +17,7 @@ spec:
               type: PathPrefix
               value: /
       backendRefs:
-        - name: {{ .service }}.{{ $dot.Values.namespace }}.svc.cluster.local
+        - name: {{ .service }}
           kind: Service
           port: 80
           weight: 1
