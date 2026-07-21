@@ -47,8 +47,8 @@ spec:
           - name: KUBERNETES_PORT
             value: "{{ .Values.instance.externalPort }}"
           - name: BACKEND_URL
-            {{- if and .Values.httpRoute.enabled (gt (len .Values.httpRoute.hostnames) 0) }}
-            value: {{ index .Values.httpRoute.hostnames 0 }}
+            {{- if and .Values.httpRoute.enabled (gt (len .Values.httpRoute.hosts) 0) }}
+            value: {{ (index .Values.httpRoute.hosts 0).host }}
             {{- else }}
             {{- with (index .Values.ingress.hosts 0) }}
             value: {{ .host }}

@@ -127,6 +127,4 @@ httpRoute:
   hosts:
     - host: operator.backend.local
     - host: operator.frontend.local
-
-
  
