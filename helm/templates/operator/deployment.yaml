@@ -1,3 +1,4 @@
+{{- if not .Values.real_operator -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -30,3 +31,4 @@ spec:
               value: {{ .Values.operator.watchNamespace | quote }}
           resources:
             {{- toYaml .Values.operator.resources | nindent 12 }}
+{{- end }}
