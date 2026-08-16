@@ -57,7 +57,7 @@ service:
 
 ingress:
   name: core
-  enabled: true
+  enabled: false
   className: traefik
   annotations: {}
   hosts:
@@ -76,7 +76,15 @@ ingress:
 httpRoute:
   enabled: false
   annotations: {}
-  hosts: []
+  hosts:
+    - host: game-backend.thomas-herve.fr
+      service: core
+      port: 8000
+      name: core
+    - host: game-frontend.thomas-herve.fr
+      service: frontend
+      port: 80
+      name: frontend
   gatewayName: ""
   gatewayNamespace: ""
 
