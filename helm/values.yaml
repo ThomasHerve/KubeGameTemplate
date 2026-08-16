@@ -6,6 +6,7 @@ namespace: operator
 
 image:
   repository: thomasherve/kube-game-core
+  host: game-backend.thomas-herve.fr
   password:
   extension: (/|$)(.*)
   pullPolicy: Always
@@ -28,6 +29,7 @@ instance:
 
 frontend:
   repository: thomasherve/kube-game-frontend
+  host: game-frontend.thomas-herve.fr
   pullPolicy: Always
   tag: "latest"
   port: 80

@@ -10,14 +10,14 @@ spec:
     gatewayNamespace: {{ .Values.namespace }}
   frontend:
     enabled: true
-    hostname: operator.frontend.local
+    hostname: {{ .Values.frontend.host }}
     repository: {{ .Values.frontend.repository }}
     tag: {{ .Values.frontend.tag | default .Chart.AppVersion }}
     pullPolicy: Always
     replicas: 1
     port: {{ .Values.frontend.port }}
     externalport: {{ .Values.frontend.port }}
-    backendURL: {{ (index .Values.httpRoute.hosts 0).host }}
+    backendURL: {{ .Values.image.host }}
     backendProtocol: https
     httpRouteEnabled: false
     podSecurityContext:
