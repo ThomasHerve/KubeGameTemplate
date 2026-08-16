@@ -102,3 +102,4 @@ operator:
 
 legacy: false
 real_operator: true
+createGateway: true
