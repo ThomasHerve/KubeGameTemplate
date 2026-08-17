@@ -1,0 +1,12 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: deployment-dev-clusterrolebinding
+  namespace: {{ .Values.namespace }}
+subjects:
+- kind: ServiceAccount
+  namespace: {{ .Values.namespace }}
+  name: deployment-dev-clusterrole
+roleRef:
+  kind: ClusterRole
+  name: deployment-dev-clusterrole
