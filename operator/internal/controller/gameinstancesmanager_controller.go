@@ -403,7 +403,7 @@ func (r *GameInstancesManagerReconciler) mutateFrontendDeployment(gim *appsv1alp
 					ImagePullPolicy: spec.PullPolicy,
 					SecurityContext: spec.SecurityContext,
 					Env: []corev1.EnvVar{
-						{Name: "BACKEND_URL", Value: spec.BackendURL},
+						{Name: "BACKEND_URL", Value: fmt.Sprintf("%s/api", gim.Spec.Hostname)},
 						{Name: "BACKEND_PROTOCOL", Value: defaultString(spec.BackendProtocol, "https")},
 						{Name: "HTTP_ROUTE_ENABLED", Value: fmt.Sprintf("%t", spec.HTTPRouteEnabled)},
 					},

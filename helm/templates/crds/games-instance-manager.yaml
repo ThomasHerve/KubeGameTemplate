@@ -14,7 +14,6 @@ spec:
     replicas: 1
     port: {{ .Values.frontend.port }}
     externalport: {{ .Values.frontend.port }}
-    backendURL: {{ .Values.image.host }}
     backendProtocol: https
     httpRouteEnabled: false
     podSecurityContext:
