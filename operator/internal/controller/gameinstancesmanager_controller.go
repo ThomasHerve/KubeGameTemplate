@@ -312,6 +312,21 @@ func (r *GameInstancesManagerReconciler) reconcileBackendHTTPRoute(
 						},
 					},
 
+					Filters: []gatewayv1.HTTPRouteFilter{
+						{
+							Type: gatewayv1.HTTPRouteFilterURLRewrite,
+							URLRewrite: &gatewayv1.HTTPURLRewriteFilter{
+								Path: &gatewayv1.HTTPPathModifier{
+									Type: gatewayv1.PrefixMatchHTTPPathModifier,
+									ReplacePrefixMatch: func() *string {
+										v := "/"
+										return &v
+									}(),
+								},
+							},
+						},
+					},
+
 					BackendRefs: []gatewayv1.HTTPBackendRef{
 						{
 							BackendRef: gatewayv1.BackendRef{
