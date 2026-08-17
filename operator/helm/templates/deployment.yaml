@@ -2,6 +2,9 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: deployment-dev-controller-manager
+  labels:
+    app.kubernetes.io/instance: kube-game-operator
+    app.kubernetes.io/name: kube-game-operator
   annotations:
     argocd.argoproj.io/sync-wave: "0"
 spec:

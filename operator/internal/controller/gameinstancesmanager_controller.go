@@ -64,6 +64,12 @@ func (r *GameInstancesManagerReconciler) Reconcile(ctx context.Context, req ctrl
 		return ctrl.Result{}, err
 	}
 
+	// Le CR est en cours de suppression.
+	// Ne recrée/modifie aucune ressource enfant.
+	if !gim.DeletionTimestamp.IsZero() {
+		return ctrl.Result{}, nil
+	}
+
 	if err := r.reconcileFrontendGateway(ctx, &gim); err != nil {
 		return ctrl.Result{}, err
 	}
