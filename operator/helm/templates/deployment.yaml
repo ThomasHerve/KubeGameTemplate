@@ -16,6 +16,8 @@ spec:
     metadata:
       labels:
         control-plane: controller-manager
+        app.kubernetes.io/instance: kube-game-operator
+        app.kubernetes.io/name: kube-game-operator
     spec:
       serviceAccountName: deployment-dev-clusterrole
       securityContext:

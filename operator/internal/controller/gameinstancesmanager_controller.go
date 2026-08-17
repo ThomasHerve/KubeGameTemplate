@@ -228,7 +228,7 @@ func (r *GameInstancesManagerReconciler) reconcileBackendReferenceGrant(
 		return fmt.Errorf("POD_NAMESPACE environment variable is not set")
 	}
 
-	referenceGrant := &gatewayv1beta1.ReferenceGrant{
+	referenceGrant := &gatewayv1.ReferenceGrant{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "allow-gameinstancesmanager-" + gim.Namespace,
 			Namespace: operatorNamespace,
@@ -236,15 +236,15 @@ func (r *GameInstancesManagerReconciler) reconcileBackendReferenceGrant(
 	}
 
 	_, err := controllerutil.CreateOrUpdate(ctx, r.Client, referenceGrant, func() error {
-		referenceGrant.Spec = gatewayv1beta1.ReferenceGrantSpec{
-			From: []gatewayv1beta1.ReferenceGrantFrom{
+		referenceGrant.Spec = gatewayv1.ReferenceGrantSpec{
+			From: []gatewayv1.ReferenceGrantFrom{
 				{
 					Group: gatewayv1.Group("gateway.networking.k8s.io"),
 					Kind:  gatewayv1.Kind("HTTPRoute"),
 					Namespace: gatewayv1.Namespace(gim.Namespace),
 				},
 			},
-			To: []gatewayv1beta1.ReferenceGrantTo{
+			To: []gatewayv1.ReferenceGrantTo{
 				{
 					Group: gatewayv1.Group(""),
 					Kind:  gatewayv1.Kind("Service"),
