@@ -63,6 +63,10 @@ func (r *GameInstancesManagerReconciler) Reconcile(ctx context.Context, req ctrl
 		return ctrl.Result{}, err
 	}
 
+	if err := r.reconcileFrontendGateway(ctx, gim); err != nil {
+		return ctrl.Result{}, err
+	}
+
 	if gim.Spec.Frontend.Enabled {
 		if err := r.reconcileFrontendServiceAccount(ctx, &gim); err != nil {
 			logger.Error(err, "failed to reconcile frontend serviceaccount")
@@ -135,7 +139,69 @@ func (r *GameInstancesManagerReconciler) reconcileFrontendService(ctx context.Co
 	return err
 }
 
-func (r *GameInstancesManagerReconciler) reconcileFrontendHTTPRoute(ctx context.Context, gim *appsv1alpha1.GameInstancesManager) error {
+func (r *GameInstancesManagerReconciler) reconcileFrontendGateway(
+	ctx context.Context,
+	gim *appsv1alpha1.GameInstancesManager,
+) error {
+	gateway := &gatewayv1.Gateway{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "operator-gateway",
+			Namespace: gim.Namespace,
+		},
+	}
+
+	_, err := controllerutil.CreateOrUpdate(ctx, r.Client, gateway, func() error {
+		gateway.Labels = frontendLabels(gim)
+
+		gateway.Spec = gatewayv1.GatewaySpec{
+			GatewayClassName: gatewayv1.ObjectName("traefik"),
+
+			Listeners: []gatewayv1.Listener{
+				{
+					Name:     gatewayv1.SectionName("websecure"),
+					Protocol: gatewayv1.HTTPSProtocolType,
+					Port:     gatewayv1.PortNumber(8443),
+
+					Hostname: func() *gatewayv1.Hostname {
+						h := gatewayv1.Hostname(gim.Spec.Frontend.Hostname)
+						return &h
+					}(),
+
+					AllowedRoutes: gatewayv1.AllowedRoutes{
+						Namespaces: &gatewayv1.RouteNamespaces{
+							From: func() *gatewayv1.NamespaceFrom {
+								from := gatewayv1.NamespacesFromAll
+								return &from
+							}(),
+						},
+					},
+
+					TLS: &gatewayv1.ListenerTLSConfig{
+						Mode: func() *gatewayv1.TLSModeType {
+							mode := gatewayv1.TLSModeTerminate
+							return &mode
+						}(),
+
+						CertificateRefs: []gatewayv1.LocalObjectReference{
+							{
+								Name: gatewayv1.ObjectName("frontend-server-tls"),
+							},
+						},
+					},
+				},
+			},
+		}
+
+		return controllerutil.SetControllerReference(gim, gateway, r.Scheme)
+	})
+
+	return err
+}
+
+func (r *GameInstancesManagerReconciler) reconcileFrontendHTTPRoute(
+	ctx context.Context,
+	gim *appsv1alpha1.GameInstancesManager,
+) error {
 	httpRoute := &gatewayv1.HTTPRoute{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      deploymentName(gim, frontendComponent),
@@ -150,17 +216,15 @@ func (r *GameInstancesManagerReconciler) reconcileFrontendHTTPRoute(ctx context.
 			CommonRouteSpec: gatewayv1.CommonRouteSpec{
 				ParentRefs: []gatewayv1.ParentReference{
 					{
-						Name:      gatewayv1.ObjectName(gim.Spec.HTTPRoute.GatewayName),
-						Namespace: func() *gatewayv1.Namespace {
-							ns := gatewayv1.Namespace(gim.Spec.HTTPRoute.GatewayNamespace)
-							return &ns
-						}(),
+						Name: gatewayv1.ObjectName("operator-gateway"),
 					},
 				},
 			},
+
 			Hostnames: []gatewayv1.Hostname{
 				gatewayv1.Hostname(gim.Spec.Frontend.Hostname),
 			},
+
 			Rules: []gatewayv1.HTTPRouteRule{
 				{
 					Matches: []gatewayv1.HTTPRouteMatch{
@@ -177,16 +241,22 @@ func (r *GameInstancesManagerReconciler) reconcileFrontendHTTPRoute(ctx context.
 							},
 						},
 					},
+
 					BackendRefs: []gatewayv1.HTTPBackendRef{
 						{
 							BackendRef: gatewayv1.BackendRef{
 								BackendObjectReference: gatewayv1.BackendObjectReference{
-									Name: gatewayv1.ObjectName(deploymentName(gim, frontendComponent)),
+									Name: gatewayv1.ObjectName(
+										deploymentName(gim, frontendComponent),
+									),
 									Port: func() *gatewayv1.PortNumber {
-										p := gatewayv1.PortNumber(gim.Spec.Frontend.ExternalPort)
+										p := gatewayv1.PortNumber(
+											gim.Spec.Frontend.ExternalPort,
+										)
 										return &p
 									}(),
 								},
+
 								Weight: func() *int32 {
 									w := int32(1)
 									return &w

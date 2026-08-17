@@ -5,9 +5,6 @@ metadata:
   name: operator-game-manager
   namespace: {{ .Values.namespace }}
 spec:
-  http_route:
-    gatewayName: operator-gateway
-    gatewayNamespace: {{ .Values.namespace }}
   frontend:
     enabled: true
     hostname: {{ .Values.frontend.host }}

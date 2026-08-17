@@ -31,17 +31,8 @@ type GameInstancesManagerSpec struct {
 
 	// Foo is an example field of GameInstancesManager. Edit gameinstancesmanager_types.go to remove/update
 	Frontend FrontendSpec `json:"frontend"`
-
-	HTTPRoute HTTPRouteSpec `json:"http_route"`
 }
 
-type HTTPRouteSpec struct {
-	// +kubebuilder:validation:Required
-	GatewayName string `json:"gatewayName"`
-
-	// +kubebuilder:validation:Required
-	GatewayNamespace string `json:"gatewayNamespace"`
-}
 
 type FrontendSpec struct {
 	// +optional
