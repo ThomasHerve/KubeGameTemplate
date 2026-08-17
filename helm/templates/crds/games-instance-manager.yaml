@@ -5,9 +5,9 @@ metadata:
   name: operator-game-manager
   namespace: {{ .Values.namespace }}
 spec:
+  hostname: {{ .Values.frontend.host }}
   frontend:
     enabled: true
-    hostname: {{ .Values.frontend.host }}
     repository: {{ .Values.frontend.repository }}
     tag: {{ .Values.frontend.tag | default .Chart.AppVersion }}
     pullPolicy: Always

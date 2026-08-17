@@ -31,6 +31,8 @@ type GameInstancesManagerSpec struct {
 
 	// Foo is an example field of GameInstancesManager. Edit gameinstancesmanager_types.go to remove/update
 	Frontend FrontendSpec `json:"frontend"`
+
+	Hostname string `json:"hostname"`
 }
 
 
@@ -64,13 +66,7 @@ type FrontendSpec struct {
 	
 	// +optional
 	// +kubebuilder:default=80
-	ExternalPort int32 `json:"externalport,omitempty"`
-
-	// +optional
-	Hostname string `json:"hostname"`
-
-	// +optional
-	BackendURL string `json:"backendURL"`
+	ExternalPort int32 `json:"externalport,omitempty"`	
  
 	// Backend protocol, defaults to https
 	// +optional

@@ -37,6 +37,7 @@ import (
 )
 
 const frontendComponent = "frontend"
+const backendComponent = "backend"
 
 // GameInstancesManagerReconciler reconciles a GameInstancesManager object
 type GameInstancesManagerReconciler struct {
@@ -63,7 +64,7 @@ func (r *GameInstancesManagerReconciler) Reconcile(ctx context.Context, req ctrl
 		return ctrl.Result{}, err
 	}
 
-	if err := r.reconcileFrontendGateway(ctx, gim); err != nil {
+	if err := r.reconcileFrontendGateway(ctx, &gim); err != nil {
 		return ctrl.Result{}, err
 	}
 
@@ -163,13 +164,13 @@ func (r *GameInstancesManagerReconciler) reconcileFrontendGateway(
 					Port:     gatewayv1.PortNumber(8443),
 
 					Hostname: func() *gatewayv1.Hostname {
-						h := gatewayv1.Hostname(gim.Spec.Frontend.Hostname)
+						h := gatewayv1.Hostname(gim.Spec.Hostname)
 						return &h
 					}(),
 
-					AllowedRoutes: gatewayv1.AllowedRoutes{
+					AllowedRoutes: &gatewayv1.AllowedRoutes{
 						Namespaces: &gatewayv1.RouteNamespaces{
-							From: func() *gatewayv1.NamespaceFrom {
+							From: func() *gatewayv1.FromNamespaces {
 								from := gatewayv1.NamespacesFromAll
 								return &from
 							}(),
@@ -182,7 +183,7 @@ func (r *GameInstancesManagerReconciler) reconcileFrontendGateway(
 							return &mode
 						}(),
 
-						CertificateRefs: []gatewayv1.LocalObjectReference{
+						CertificateRefs: []gatewayv1.SecretObjectReference{
 							{
 								Name: gatewayv1.ObjectName("frontend-server-tls"),
 							},
@@ -192,7 +193,87 @@ func (r *GameInstancesManagerReconciler) reconcileFrontendGateway(
 			},
 		}
 
-		return controllerutil.SetControllerReference(gim, gateway, r.Scheme)
+		return controllerutil.SetControllerReference(
+			gim,
+			gateway,
+			r.Scheme,
+		)
+	})
+
+	return err
+}
+
+func (r *GameInstancesManagerReconciler) reconcileBackendHTTPRoute(
+	ctx context.Context,
+	gim *appsv1alpha1.GameInstancesManager,
+) error {
+	httpRoute := &gatewayv1.HTTPRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      deploymentName(gim, backendComponent),
+			Namespace: gim.Namespace,
+		},
+	}
+
+	_, err := controllerutil.CreateOrUpdate(ctx, r.Client, httpRoute, func() error {
+		httpRoute.Labels = backendLabels(gim)
+
+		httpRoute.Spec = gatewayv1.HTTPRouteSpec{
+			CommonRouteSpec: gatewayv1.CommonRouteSpec{
+				ParentRefs: []gatewayv1.ParentReference{
+					{
+						Name: gatewayv1.ObjectName("operator-gateway"),
+					},
+				},
+			},
+
+			Hostnames: []gatewayv1.Hostname{
+				gatewayv1.Hostname(gim.Spec.Hostname),
+			},
+
+			Rules: []gatewayv1.HTTPRouteRule{
+				{
+					Matches: []gatewayv1.HTTPRouteMatch{
+						{
+							Path: &gatewayv1.HTTPPathMatch{
+								Type: func() *gatewayv1.PathMatchType {
+									t := gatewayv1.PathMatchPathPrefix
+									return &t
+								}(),
+								Value: func() *string {
+									v := "/api"
+									return &v
+								}(),
+							},
+						},
+					},
+
+					BackendRefs: []gatewayv1.HTTPBackendRef{
+						{
+							BackendRef: gatewayv1.BackendRef{
+								BackendObjectReference: gatewayv1.BackendObjectReference{
+									Name: gatewayv1.ObjectName(
+										deploymentName(gim, frontendComponent),
+									),
+									Port: func() *gatewayv1.PortNumber {
+										p := gatewayv1.PortNumber(
+											gim.Spec.Frontend.ExternalPort,
+										)
+										return &p
+									}(),
+								},
+
+								Weight: func() *int32 {
+									w := int32(1)
+									return &w
+								}(),
+							},
+						},
+					},
+				},
+			},
+		}
+
+		return controllerutil.SetControllerReference(gim, httpRoute, r.Scheme)
 	})
 
 	return err
@@ -222,7 +303,7 @@ func (r *GameInstancesManagerReconciler) reconcileFrontendHTTPRoute(
 			},
 
 			Hostnames: []gatewayv1.Hostname{
-				gatewayv1.Hostname(gim.Spec.Frontend.Hostname),
+				gatewayv1.Hostname(gim.Spec.Hostname),
 			},
 
 			Rules: []gatewayv1.HTTPRouteRule{
@@ -352,6 +433,14 @@ func serviceAccountName(gim *appsv1alpha1.GameInstancesManager) string {
 func frontendLabels(gim *appsv1alpha1.GameInstancesManager) map[string]string {
 	return map[string]string{
 		"app.kubernetes.io/name":     frontendComponent,
+		"app.kubernetes.io/instance": gim.Name,
+		"app.kubernetes.io/part-of":  "GameInstancesManager",
+	}
+}
+
+func backendLabels(gim *appsv1alpha1.GameInstancesManager) map[string]string {
+	return map[string]string{
+		"app.kubernetes.io/name":     backendComponent,
 		"app.kubernetes.io/instance": gim.Name,
 		"app.kubernetes.io/part-of":  "GameInstancesManager",
 	}

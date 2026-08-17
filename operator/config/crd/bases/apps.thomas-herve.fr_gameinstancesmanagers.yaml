@@ -584,19 +584,8 @@ spec:
                     description: Image tag. Defaults to "latest" if empty.
                     type: string
                 type: object
-              http_route:
-                properties:
-                  gatewayName:
-                    type: string
-                  gatewayNamespace:
-                    type: string
-                required:
-                - gatewayName
-                - gatewayNamespace
-                type: object
             required:
             - frontend
-            - http_route
             type: object
           status:
             description: GameInstancesManagerStatus defines the observed state of
