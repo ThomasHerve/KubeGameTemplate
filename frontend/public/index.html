@@ -1,5 +1,3 @@
-<!DOCTYPE html>
-
 <html lang="fr"> <head> <meta charset="UTF-8"> <title>Kubernetes Chat Rooms</title>
 
 <style> body { font-family: Arial, sans-serif; background: #111827; color: white; margin: 0; padding: 20px; } .container { max-width: 800px; margin: auto; } .card { background: #1f2937; padding: 20px; border-radius: 10px; margin-top: 20px; } input, button { padding: 10px; margin-top: 10px; border-radius: 5px; border: none; } input { width: calc(100% - 20px); } button { cursor: pointer; background: #2563eb; color: white; } button:hover { background: #1d4ed8; } .hidden { display: none; } #messages { height: 300px; overflow-y: auto; background: black; padding: 10px; border-radius: 5px; } .message { margin-bottom: 5px; } .host { color: #22c55e; } .info { color: #93c5fd; } #error { color: red; } </style>
@@ -75,7 +73,7 @@
 // Configuration
 //
 
-const BACKEND_URL = window.APP_CONFIG.BACKEND_PROTOCOL + "://" + window.APP_CONFIG.BACKEND_URL;
+const BACKEND_URL = ${BACKEND_URL} + "://" + "${BACKEND_PROTOCOL}"
 
 let websocket = null;
 let currentRoom = null;
