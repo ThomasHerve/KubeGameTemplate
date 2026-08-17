@@ -585,12 +585,6 @@ spec:
               instance:
                 description: Configuration of game instances.
                 properties:
-                  externalPort:
-                    description: Port exposed by the Kubernetes Service.
-                    format: int32
-                    maximum: 65535
-                    minimum: 1
-                    type: integer
                   internalPort:
                     description: Port exposed by the container.
                     format: int32
@@ -610,7 +604,6 @@ spec:
                     description: Container image tag.
                     type: string
                 required:
-                - externalPort
                 - internalPort
                 - repository
                 type: object
