@@ -6,6 +6,11 @@ metadata:
   namespace: {{ .Values.namespace }}
 spec:
   hostname: {{ .Values.frontend.host }}
+  instance:
+    repository: thomasherve/kube-game-instance
+    pullPolicy: Always
+    tag: "latest"
+    internalPort: 8000
   frontend:
     enabled: true
     repository: {{ .Values.frontend.repository }}

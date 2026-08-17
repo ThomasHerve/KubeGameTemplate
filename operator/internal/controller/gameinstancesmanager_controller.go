@@ -51,7 +51,6 @@ type GameInstancesManagerReconciler struct {
 // +kubebuilder:rbac:groups=apps.thomas-herve.fr,resources=gameinstancesmanagers/finalizers,verbs=update
 //+kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="",resources=events,verbs=create;patch
-
 func (r *GameInstancesManagerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
  

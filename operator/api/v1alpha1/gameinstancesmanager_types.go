@@ -33,6 +33,31 @@ type GameInstancesManagerSpec struct {
 	Frontend FrontendSpec `json:"frontend"`
 
 	Hostname string `json:"hostname"`
+
+	// Configuration of game instances.
+	Instance InstanceSpec `json:"instance"`
+}
+
+type InstanceSpec struct {
+
+	// Container image repository.
+	// +kubebuilder:validation:MinLength=1
+	Repository string `json:"repository"`
+
+	// Container image tag.
+	// +optional
+	// +kubebuilder:default="latest"
+	Tag string `json:"tag,omitempty"`
+
+	// Image pull policy.
+	// +optional
+	// +kubebuilder:default="Always"
+	PullPolicy corev1.PullPolicy `json:"pullPolicy,omitempty"`
+
+	// Port exposed by the container.
+	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:validation:Maximum=65535
+	InternalPort int32 `json:"internalPort"`
 }
 
 

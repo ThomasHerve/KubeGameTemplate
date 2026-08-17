@@ -205,6 +205,8 @@ func main() {
 		os.Exit(1)
 	}
 
+	api.SetClient(mgr.GetClient())
+
 	if err := (&controller.GameInstancesManagerReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),

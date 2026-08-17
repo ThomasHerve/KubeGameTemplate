@@ -582,9 +582,42 @@ spec:
                 type: object
               hostname:
                 type: string
+              instance:
+                description: Configuration of game instances.
+                properties:
+                  externalPort:
+                    description: Port exposed by the Kubernetes Service.
+                    format: int32
+                    maximum: 65535
+                    minimum: 1
+                    type: integer
+                  internalPort:
+                    description: Port exposed by the container.
+                    format: int32
+                    maximum: 65535
+                    minimum: 1
+                    type: integer
+                  pullPolicy:
+                    default: Always
+                    description: Image pull policy.
+                    type: string
+                  repository:
+                    description: Container image repository.
+                    minLength: 1
+                    type: string
+                  tag:
+                    default: latest
+                    description: Container image tag.
+                    type: string
+                required:
+                - externalPort
+                - internalPort
+                - repository
+                type: object
             required:
             - frontend
             - hostname
+            - instance
             type: object
           status:
             description: GameInstancesManagerStatus defines the observed state of
