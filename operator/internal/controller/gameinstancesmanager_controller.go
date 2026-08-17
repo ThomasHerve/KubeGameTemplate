@@ -19,6 +19,7 @@ package controller
 import (
 	"context"
 	"fmt"
+	"os"
  
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -71,6 +72,14 @@ func (r *GameInstancesManagerReconciler) Reconcile(ctx context.Context, req ctrl
 	}
 
 	if err := r.reconcileFrontendGateway(ctx, &gim); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	if err := r.reconcileBackendReferenceGrant(ctx, &gim); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	if err := r.reconcileBackendHTTPRoute(ctx, &gim); err != nil {
 		return ctrl.Result{}, err
 	}
 
@@ -209,10 +218,60 @@ func (r *GameInstancesManagerReconciler) reconcileFrontendGateway(
 	return err
 }
 
+func (r *GameInstancesManagerReconciler) reconcileBackendReferenceGrant(
+	ctx context.Context,
+	gim *appsv1alpha1.GameInstancesManager,
+) error {
+
+	operatorNamespace := os.Getenv("POD_NAMESPACE")
+	if operatorNamespace == "" {
+		return fmt.Errorf("POD_NAMESPACE environment variable is not set")
+	}
+
+	referenceGrant := &gatewayv1beta1.ReferenceGrant{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "allow-gameinstancesmanager-" + gim.Namespace,
+			Namespace: operatorNamespace,
+		},
+	}
+
+	_, err := controllerutil.CreateOrUpdate(ctx, r.Client, referenceGrant, func() error {
+		referenceGrant.Spec = gatewayv1beta1.ReferenceGrantSpec{
+			From: []gatewayv1beta1.ReferenceGrantFrom{
+				{
+					Group: gatewayv1.Group("gateway.networking.k8s.io"),
+					Kind:  gatewayv1.Kind("HTTPRoute"),
+					Namespace: gatewayv1.Namespace(gim.Namespace),
+				},
+			},
+			To: []gatewayv1beta1.ReferenceGrantTo{
+				{
+					Group: gatewayv1.Group(""),
+					Kind:  gatewayv1.Kind("Service"),
+					Name: func() *gatewayv1.ObjectName {
+						name := gatewayv1.ObjectName("kube-game-operator-service")
+						return &name
+					}(),
+				},
+			},
+		}
+
+		return nil
+	})
+
+	return err
+}
+
 func (r *GameInstancesManagerReconciler) reconcileBackendHTTPRoute(
 	ctx context.Context,
 	gim *appsv1alpha1.GameInstancesManager,
 ) error {
+
+	namespace := os.Getenv("POD_NAMESPACE")
+	if namespace == "" {
+		return fmt.Errorf("POD_NAMESPACE environment variable is not set")
+	}
+
 	httpRoute := &gatewayv1.HTTPRoute{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      deploymentName(gim, backendComponent),
@@ -258,11 +317,15 @@ func (r *GameInstancesManagerReconciler) reconcileBackendHTTPRoute(
 							BackendRef: gatewayv1.BackendRef{
 								BackendObjectReference: gatewayv1.BackendObjectReference{
 									Name: gatewayv1.ObjectName(
-										deploymentName(gim, frontendComponent),
+										"kube-game-operator-service",
 									),
+									Namespace: func() *gatewayv1.Namespace {
+										ns := gatewayv1.Namespace(namespace)
+										return &ns
+									}(),
 									Port: func() *gatewayv1.PortNumber {
 										p := gatewayv1.PortNumber(
-											gim.Spec.Frontend.ExternalPort,
+											8080,
 										)
 										return &p
 									}(),
