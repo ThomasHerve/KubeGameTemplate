@@ -11,13 +11,16 @@ spec:
   gatewayClassName: traefik
 
   listeners:
-
-  - name: http
-    protocol: HTTP
-    port: 8000
-
-    allowedRoutes:
-      namespaces:
-        from: All
+    - name: websecure
+      protocol: HTTPS
+      port: 8443
+      hostname: {{ .Values.frontend.host }}
+      allowedRoutes:
+        namespaces:
+          from: All
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: frontend-server-tls
 
 {{- end -}}
