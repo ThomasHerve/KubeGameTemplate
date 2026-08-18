@@ -1,21 +1,20 @@
-{{- if .Values.real_operator }}
 apiVersion: apps.thomas-herve.fr/v1alpha1
 kind: GameInstancesManager
 metadata:
   name: operator-game-manager
   namespace: {{ .Values.namespace }}
 spec:
-  hostname: {{ .Values.frontend.host }}
+  hostname: {{ .Values.hostname }}
   instance:
-    repository: thomasherve/kube-game-instance
-    pullPolicy: Always
-    tag: "latest"
-    internalPort: 8000
+    repository: {{ .Values.instance.repository }}
+    pullPolicy: {{ .Values.instance.pullPolicy }}
+    tag: {{ .Values.instance.tag | default .Chart.AppVersion }}
+    internalPort: {{ .Values.instance.internalPort }}
   frontend:
-    enabled: true
+    enabled: {{ .Values.frontend.enabled }}
     repository: {{ .Values.frontend.repository }}
     tag: {{ .Values.frontend.tag | default .Chart.AppVersion }}
-    pullPolicy: Always
+    pullPolicy: {{ .Values.frontend.pullPolicy }}
     replicas: 1
     port: {{ .Values.frontend.port }}
     externalport: {{ .Values.frontend.port }}
@@ -35,4 +34,3 @@ spec:
         memory: 64Mi
       limits:
         memory: 128Mi
-{{- end }}

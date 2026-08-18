@@ -3,105 +3,16 @@
 # Declare variables to be passed into your templates.
 
 namespace: operator
-
-image:
-  repository: thomasherve/kube-game-core
-  host: game-backend.thomas-herve.fr
-  password:
-  extension: (/|$)(.*)
-  pullPolicy: Always
-  tag: "latest"
-  replicaCount: 1
-  autoscaling:
-    enabled: false
-    minReplicas: 1
-    maxReplicas: 100
-    targetCPUUtilizationPercentage: 80
-    targetMemoryUtilizationPercentage: 80
-
-instance:
-  repository: thomasherve/kube-game-instance
-  pullPolicy: Always
-  tag: "latest"
-  enabled: false 
-  externalPort: 80
-  internalPort: 8000
+hostname: game-frontend.thomas-herve.fr
 
 frontend:
   repository: thomasherve/kube-game-frontend
-  host: game-frontend.thomas-herve.fr
-  pullPolicy: Always
   tag: "latest"
   port: 80
-  replicaCount: 1
-  autoscaling:
-    enabled: false
-    minReplicas: 1
-    maxReplicas: 100
-    targetCPUUtilizationPercentage: 80
-    targetMemoryUtilizationPercentage: 80
+  enabled: true
 
-redis:
-  image: redis:7.2.5-alpine
-  type: ClusterIP
-  port: 6379
-  resources:
-    limits:
-      cpu: 200m
-      memory: 200Mi
-    requests:
-      cpu: 100m
-      memory: 100Mi
-
-service:
-  type: ClusterIP
-  port: 8000
-
-ingress:
-  name: core
-  enabled: false
-  className: traefik
-  annotations: {}
-  hosts:
-    - host: operator.backend.local
-      path: /
-      pathType: Prefix
-      name: core
-      port: 8000
-    - host: operator.frontend.local
-      path: /
-      pathType: Prefix
-      name: frontend
-      port: 80
-  tls: []
-
-httpRoute:
-  enabled: false
-  annotations: {}
-  hosts:
-    - host: game-backend.thomas-herve.fr
-      service: core
-      port: 8000
-      name: core
-    - host: game-frontend.thomas-herve.fr
-      service: frontend
-      port: 80
-      name: frontend
-  gatewayName: ""
-  gatewayNamespace: ""
-
-operator:
-  replicas: 1
-  clusterScoped: true
-  watchNamespace: operator
-  image:
-    repository: docker.io/thomasherve/kube-game-operator
-    tag: dev
-    pullPolicy: Always
-  resources:
-    requests: { cpu: 50m, memory: 64Mi }
-    limits: { memory: 128Mi }
-
-legacy: false
-real_operator: true
-createGateway: true
+instance:
+  repository: thomasherve/kube-game-instance
+  tag: "latest"
+  internalPort: 8000
+  pullPolicy: Always
