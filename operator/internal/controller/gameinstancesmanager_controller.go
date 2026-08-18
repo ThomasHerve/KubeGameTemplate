@@ -70,6 +70,12 @@ func (r *GameInstancesManagerReconciler) Reconcile(ctx context.Context, req ctrl
 		return ctrl.Result{}, nil
 	}
 
+	// Détecter si les routes ont changé et nettoyer si nécessaire
+	if err := r.reconcileRoutesChanges(ctx, &gim); err != nil {
+		logger.Error(err, "failed to reconcile routes changes")
+		return ctrl.Result{}, err
+	}
+
 	if err := r.reconcileFrontendGateway(ctx, &gim); err != nil {
 		return ctrl.Result{}, err
 	}
@@ -105,6 +111,98 @@ func (r *GameInstancesManagerReconciler) Reconcile(ctx context.Context, req ctrl
 	}
  
 	return ctrl.Result{}, nil
+}
+
+// reconcileRoutesChanges détecte si deleteEnabled a changé de true à false
+// et nettoie les ressources associées
+func (r *GameInstancesManagerReconciler) reconcileRoutesChanges(ctx context.Context, gim *appsv1alpha1.GameInstancesManager) error {
+	logger := log.FromContext(ctx)
+
+	// Récupérer l'état actuel de Routes
+	currentRoutes := gim.Spec.Routes
+
+	// Si Routes est nil, considérer les valeurs par défaut
+	if currentRoutes == nil {
+		return nil
+	}
+
+	// Récupérer l'état précédent depuis le Status
+	lastAppliedState := gim.Status.LastAppliedRoutesState
+
+	// Si deleteEnabled passe de true à false, nettoyer les ressources delete
+	if lastAppliedState != nil && lastAppliedState.DeleteEnabled && !currentRoutes.DeleteEnabled {
+		logger.Info("DeleteEnabled changed from true to false, cleaning up delete routes")
+		if err := r.cleanupDeleteRoutes(ctx, gim); err != nil {
+			logger.Error(err, "failed to cleanup delete routes")
+			return err
+		}
+	}
+
+	// Si createEnabled passe de true à false, nettoyer les ressources create (optionnel)
+	if lastAppliedState != nil && lastAppliedState.CreateEnabled && !currentRoutes.CreateEnabled {
+		logger.Info("CreateEnabled changed from true to false, cleaning up create routes")
+		if err := r.cleanupCreateRoutes(ctx, gim); err != nil {
+			logger.Error(err, "failed to cleanup create routes")
+			return err
+		}
+	}
+
+	// Mettre à jour le Status avec l'état actuel pour la prochaine réconciliation
+	gim.Status.LastAppliedRoutesState = &appsv1alpha1.RoutesConfig{
+		CreateEnabled: currentRoutes.CreateEnabled,
+		DeleteEnabled: currentRoutes.DeleteEnabled,
+	}
+
+	if err := r.Status().Update(ctx, gim); err != nil {
+		logger.Error(err, "failed to update GameInstancesManager status")
+		return err
+	}
+
+	return nil
+}
+
+// cleanupDeleteRoutes supprime les ressources associées aux routes de suppression
+func (r *GameInstancesManagerReconciler) cleanupDeleteRoutes(ctx context.Context, gim *appsv1alpha1.GameInstancesManager) error {
+	logger := log.FromContext(ctx)
+
+	// Supprimer la HTTPRoute pour le endpoint delete
+	httpRoute := &gatewayv1.HTTPRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      deploymentName(gim, backendComponent) + "-delete",
+			Namespace: gim.Namespace,
+		},
+	}
+
+	err := r.Client.Delete(ctx, httpRoute)
+	if err != nil && !errors.IsNotFound(err) {
+		logger.Error(err, "failed to delete delete-route HTTPRoute", "name", httpRoute.Name, "namespace", httpRoute.Namespace)
+		return err
+	}
+
+	logger.Info("Successfully cleaned up delete route", "name", httpRoute.Name, "namespace", httpRoute.Namespace)
+	return nil
+}
+
+// cleanupCreateRoutes supprime les ressources associées aux routes de création
+func (r *GameInstancesManagerReconciler) cleanupCreateRoutes(ctx context.Context, gim *appsv1alpha1.GameInstancesManager) error {
+	logger := log.FromContext(ctx)
+
+	// Supprimer la HTTPRoute pour le endpoint create
+	httpRoute := &gatewayv1.HTTPRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      deploymentName(gim, backendComponent) + "-create",
+			Namespace: gim.Namespace,
+		},
+	}
+
+	err := r.Client.Delete(ctx, httpRoute)
+	if err != nil && !errors.IsNotFound(err) {
+		logger.Error(err, "failed to delete create-route HTTPRoute", "name", httpRoute.Name, "namespace", httpRoute.Namespace)
+		return err
+	}
+
+	logger.Info("Successfully cleaned up create route", "name", httpRoute.Name, "namespace", httpRoute.Namespace)
+	return nil
 }
 
 func (r *GameInstancesManagerReconciler) reconcileFrontendServiceAccount(ctx context.Context, gim *appsv1alpha1.GameInstancesManager) error {

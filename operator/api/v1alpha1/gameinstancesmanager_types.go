@@ -145,6 +145,10 @@ type GameInstancesManagerStatus struct {
  
 	// +optional
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
+
+	// Track the last applied routes configuration to detect changes
+	// +optional
+	LastAppliedRoutesState *RoutesConfig `json:"lastAppliedRoutesState,omitempty"`
 }
 
 // +kubebuilder:object:root=true

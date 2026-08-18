@@ -690,6 +690,19 @@ spec:
                   - type
                   type: object
                 type: array
+              lastAppliedRoutesState:
+                description: Track the last applied routes configuration to detect
+                  changes
+                properties:
+                  createEnabled:
+                    default: true
+                    description: Route pour créer des instances
+                    type: boolean
+                  deleteEnabled:
+                    default: false
+                    description: Route pour supprimer des instances
+                    type: boolean
+                type: object
               observedGeneration:
                 format: int64
                 type: integer
