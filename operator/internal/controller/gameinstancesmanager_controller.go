@@ -339,7 +339,7 @@ func (r *GameInstancesManagerReconciler) reconcileBackendHTTPRoute(
 									}(),
 									Port: func() *gatewayv1.PortNumber {
 										p := gatewayv1.PortNumber(
-											8080,
+											80,
 										)
 										return &p
 									}(),

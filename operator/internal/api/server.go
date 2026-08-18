@@ -38,9 +38,9 @@ func StartHTTPServer() {
 
 	http.HandleFunc("/delete-room", handleDeleteRoom)
 
-	fmt.Println("HTTP API listening on :8080")
+	fmt.Println("HTTP API listening on :80")
 
-	if err := http.ListenAndServe(":8080", nil); err != nil {
+	if err := http.ListenAndServe(":80", nil); err != nil {
 		panic(err)
 	}
 }
@@ -106,10 +106,10 @@ func handleCreateRoom(w http.ResponseWriter, r *http.Request) {
 		"gameinstancesmanager.io/instance-id":    instanceID,
 	}
 
-	backendURL := strings.TrimSpace(gim.Spec.Hostname)
-	if backendURL == "" {
+	backendURL := fmt.Sprintf("kube-game-operator-service.%s.svc.cluster.local", gim.Namespace) //strings.TrimSpace(gim.Spec.Hostname)
+	/*if backendURL == "" {
 		backendURL = fmt.Sprintf("%s.%s.svc.cluster.local", gim.Name, gim.Namespace)
-	}
+	}*/
 
 	deployment := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{

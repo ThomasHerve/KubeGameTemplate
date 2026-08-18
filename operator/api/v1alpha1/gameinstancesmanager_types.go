@@ -59,12 +59,26 @@ type InstanceSpec struct {
 	// +kubebuilder:default="Always"
 	PullPolicy corev1.PullPolicy `json:"pullPolicy,omitempty"`
 
+	// Nouvelle section: Configuration des routes
+    Routes *RoutesConfig `json:"routes,omitempty"`
+
 	// Port exposed by the container.
 	// +kubebuilder:validation:Minimum=1
 	// +kubebuilder:validation:Maximum=65535
 	InternalPort int32 `json:"internalPort"`
 }
 
+type RoutesConfig struct {
+    // Route pour créer des instances
+    // +optional
+    // +kubebuilder:default=true
+    CreateEnabled bool `json:"createEnabled,omitempty"`
+    
+    // Route pour supprimer des instances
+    // +optional
+    // +kubebuilder:default=false
+    DeleteEnabled bool `json:"deleteEnabled,omitempty"`
+}
 
 type FrontendSpec struct {
 	// +optional
