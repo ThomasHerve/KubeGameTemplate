@@ -10,6 +10,7 @@ frontend:
   tag: "latest"
   port: 80
   enabled: true
+  pullPolicy: Always
 
 instance:
   repository: thomasherve/kube-game-instance
