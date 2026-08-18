@@ -76,6 +76,12 @@ func (r *GameInstancesManagerReconciler) Reconcile(ctx context.Context, req ctrl
 		return ctrl.Result{}, err
 	}
 
+	// Détecter si frontend.enabled a changé et nettoyer si nécessaire
+	if err := r.reconcileFrontendChanges(ctx, &gim); err != nil {
+		logger.Error(err, "failed to reconcile frontend changes")
+		return ctrl.Result{}, err
+	}
+
 	if err := r.reconcileFrontendGateway(ctx, &gim); err != nil {
 		return ctrl.Result{}, err
 	}
@@ -202,6 +208,107 @@ func (r *GameInstancesManagerReconciler) cleanupCreateRoutes(ctx context.Context
 	}
 
 	logger.Info("Successfully cleaned up create route", "name", httpRoute.Name, "namespace", httpRoute.Namespace)
+	return nil
+}
+
+// reconcileFrontendChanges détecte si frontend.enabled a changé de true à false
+// et nettoie les ressources associées
+func (r *GameInstancesManagerReconciler) reconcileFrontendChanges(ctx context.Context, gim *appsv1alpha1.GameInstancesManager) error {
+	logger := log.FromContext(ctx)
+
+	// Récupérer l'état actuel de frontend.enabled
+	currentFrontendEnabled := gim.Spec.Frontend.Enabled
+
+	// Récupérer l'état précédent depuis le Status
+	lastAppliedFrontendEnabled := gim.Status.LastAppliedFrontendEnabled
+
+	// Si frontend.enabled passe de true à false, nettoyer les ressources frontend
+	if lastAppliedFrontendEnabled != nil && *lastAppliedFrontendEnabled && !currentFrontendEnabled {
+		logger.Info("Frontend.Enabled changed from true to false, cleaning up frontend resources")
+		if err := r.cleanupFrontend(ctx, gim); err != nil {
+			logger.Error(err, "failed to cleanup frontend")
+			return err
+		}
+	}
+
+	// Mettre à jour le Status avec l'état actuel pour la prochaine réconciliation
+	gim.Status.LastAppliedFrontendEnabled = &currentFrontendEnabled
+
+	if err := r.Status().Update(ctx, gim); err != nil {
+		logger.Error(err, "failed to update GameInstancesManager status")
+		return err
+	}
+
+	return nil
+}
+
+// cleanupFrontend supprime les ressources associées au frontend
+func (r *GameInstancesManagerReconciler) cleanupFrontend(ctx context.Context, gim *appsv1alpha1.GameInstancesManager) error {
+	logger := log.FromContext(ctx)
+
+	// Supprimer le Deployment du frontend
+	deployment := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      deploymentName(gim, frontendComponent),
+			Namespace: gim.Namespace,
+		},
+	}
+
+	err := r.Client.Delete(ctx, deployment)
+	if err != nil && !errors.IsNotFound(err) {
+		logger.Error(err, "failed to delete frontend deployment", "name", deployment.Name, "namespace", deployment.Namespace)
+		return err
+	}
+	logger.Info("Successfully deleted frontend deployment", "name", deployment.Name)
+
+	// Supprimer le Service du frontend
+	service := &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      deploymentName(gim, frontendComponent),
+			Namespace: gim.Namespace,
+		},
+	}
+
+	err = r.Client.Delete(ctx, service)
+	if err != nil && !errors.IsNotFound(err) {
+		logger.Error(err, "failed to delete frontend service", "name", service.Name, "namespace", service.Namespace)
+		return err
+	}
+	logger.Info("Successfully deleted frontend service", "name", service.Name)
+
+	// Supprimer la ServiceAccount du frontend (seulement si elle est gérée par nous)
+	if gim.Spec.Frontend.ServiceAccountName == "" {
+		sa := &corev1.ServiceAccount{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      serviceAccountName(gim),
+				Namespace: gim.Namespace,
+			},
+		}
+
+		err = r.Client.Delete(ctx, sa)
+		if err != nil && !errors.IsNotFound(err) {
+			logger.Error(err, "failed to delete frontend service account", "name", sa.Name, "namespace", sa.Namespace)
+			return err
+		}
+		logger.Info("Successfully deleted frontend service account", "name", sa.Name)
+	}
+
+	// Supprimer la HTTPRoute du frontend
+	httpRoute := &gatewayv1.HTTPRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      deploymentName(gim, frontendComponent),
+			Namespace: gim.Namespace,
+		},
+	}
+
+	err = r.Client.Delete(ctx, httpRoute)
+	if err != nil && !errors.IsNotFound(err) {
+		logger.Error(err, "failed to delete frontend HTTPRoute", "name", httpRoute.Name, "namespace", httpRoute.Namespace)
+		return err
+	}
+	logger.Info("Successfully deleted frontend HTTPRoute", "name", httpRoute.Name)
+
+	logger.Info("Cleanup frontend resources completed for GameInstancesManager", "name", gim.Name, "namespace", gim.Namespace)
 	return nil
 }
 

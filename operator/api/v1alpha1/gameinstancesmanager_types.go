@@ -149,6 +149,10 @@ type GameInstancesManagerStatus struct {
 	// Track the last applied routes configuration to detect changes
 	// +optional
 	LastAppliedRoutesState *RoutesConfig `json:"lastAppliedRoutesState,omitempty"`
+
+	// Track the last applied frontend.enabled state to detect when it's disabled
+	// +optional
+	LastAppliedFrontendEnabled *bool `json:"lastAppliedFrontendEnabled,omitempty"`
 }
 
 // +kubebuilder:object:root=true
