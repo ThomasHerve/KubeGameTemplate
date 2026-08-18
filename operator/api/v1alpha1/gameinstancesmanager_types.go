@@ -37,6 +37,9 @@ type GameInstancesManagerSpec struct {
 	// Configuration of game instances.
 	Instance InstanceSpec `json:"instance"`
 
+	// Nouvelle section: Configuration des routes
+    Routes *RoutesConfig `json:"routes,omitempty"`
+
 	// Maximum number of concurrent game instances. If not set, there is no limit.
 	// +optional
 	// +kubebuilder:validation:Minimum=1
@@ -58,9 +61,6 @@ type InstanceSpec struct {
 	// +optional
 	// +kubebuilder:default="Always"
 	PullPolicy corev1.PullPolicy `json:"pullPolicy,omitempty"`
-
-	// Nouvelle section: Configuration des routes
-    Routes *RoutesConfig `json:"routes,omitempty"`
 
 	// Port exposed by the container.
 	// +kubebuilder:validation:Minimum=1

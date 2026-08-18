@@ -19,3 +19,7 @@ instance:
   tag: "latest"
   internalPort: 8000
   pullPolicy: Always
+
+routes:
+  createEnabled: true
+  deleteEnabled: false

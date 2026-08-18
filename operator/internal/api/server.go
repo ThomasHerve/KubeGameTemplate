@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"os"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -34,9 +35,9 @@ func SetClient(c client.Client, s *runtime.Scheme) {
 
 func StartHTTPServer() {
 
-	http.HandleFunc("/create-room", handleCreateRoom)
+	http.HandleFunc("/api/create-room", handleCreateRoom)
 
-	http.HandleFunc("/delete-room", handleDeleteRoom)
+	http.HandleFunc("/api/delete-room", handleDeleteRoom)
 
 	fmt.Println("HTTP API listening on :80")
 
@@ -106,7 +107,7 @@ func handleCreateRoom(w http.ResponseWriter, r *http.Request) {
 		"gameinstancesmanager.io/instance-id":    instanceID,
 	}
 
-	backendURL := fmt.Sprintf("kube-game-operator-service.%s.svc.cluster.local", gim.Namespace) //strings.TrimSpace(gim.Spec.Hostname)
+	backendURL := fmt.Sprintf("kube-game-operator-service.%s.svc.cluster.local", os.Getenv("POD_NAMESPACE")) //strings.TrimSpace(gim.Spec.Hostname)
 	/*if backendURL == "" {
 		backendURL = fmt.Sprintf("%s.%s.svc.cluster.local", gim.Name, gim.Namespace)
 	}*/

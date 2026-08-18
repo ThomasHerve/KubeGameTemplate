@@ -599,18 +599,6 @@ spec:
                     description: Container image repository.
                     minLength: 1
                     type: string
-                  routes:
-                    description: 'Nouvelle section: Configuration des routes'
-                    properties:
-                      createEnabled:
-                        default: true
-                        description: Route pour créer des instances
-                        type: boolean
-                      deleteEnabled:
-                        default: false
-                        description: Route pour supprimer des instances
-                        type: boolean
-                    type: object
                   tag:
                     default: latest
                     description: Container image tag.
@@ -625,6 +613,18 @@ spec:
                 format: int32
                 minimum: 1
                 type: integer
+              routes:
+                description: 'Nouvelle section: Configuration des routes'
+                properties:
+                  createEnabled:
+                    default: true
+                    description: Route pour créer des instances
+                    type: boolean
+                  deleteEnabled:
+                    default: false
+                    description: Route pour supprimer des instances
+                    type: boolean
+                type: object
             required:
             - frontend
             - hostname

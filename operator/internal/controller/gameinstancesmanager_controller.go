@@ -271,95 +271,190 @@ func (r *GameInstancesManagerReconciler) reconcileBackendHTTPRoute(
 		return fmt.Errorf("POD_NAMESPACE environment variable is not set")
 	}
 
-	httpRoute := &gatewayv1.HTTPRoute{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      deploymentName(gim, backendComponent),
-			Namespace: gim.Namespace,
-		},
-	}
-
-	_, err := controllerutil.CreateOrUpdate(ctx, r.Client, httpRoute, func() error {
-		httpRoute.Labels = backendLabels(gim)
-
-		httpRoute.Spec = gatewayv1.HTTPRouteSpec{
-			CommonRouteSpec: gatewayv1.CommonRouteSpec{
-				ParentRefs: []gatewayv1.ParentReference{
-					{
-						Name: gatewayv1.ObjectName("operator-gateway"),
-					},
-				},
+	
+	if gim.Spec.Routes == nil || gim.Spec.Routes.CreateEnabled {
+		httpRoute := &gatewayv1.HTTPRoute{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      deploymentName(gim, backendComponent) + "-create",
+				Namespace: gim.Namespace,
 			},
-
-			Hostnames: []gatewayv1.Hostname{
-				gatewayv1.Hostname(gim.Spec.Hostname),
-			},
-
-			Rules: []gatewayv1.HTTPRouteRule{
-				{
-					Matches: []gatewayv1.HTTPRouteMatch{
+		}
+		_, err := controllerutil.CreateOrUpdate(ctx, r.Client, httpRoute, func() error {
+			httpRoute.Labels = backendLabels(gim)
+			httpRoute.Spec = gatewayv1.HTTPRouteSpec{
+				CommonRouteSpec: gatewayv1.CommonRouteSpec{
+					ParentRefs: []gatewayv1.ParentReference{
 						{
-							Path: &gatewayv1.HTTPPathMatch{
-								Type: func() *gatewayv1.PathMatchType {
-									t := gatewayv1.PathMatchPathPrefix
-									return &t
-								}(),
-								Value: func() *string {
-									v := "/api"
-									return &v
-								}(),
-							},
+							Name: gatewayv1.ObjectName("operator-gateway"),
 						},
 					},
+				},
 
-					Filters: []gatewayv1.HTTPRouteFilter{
-						{
-							Type: gatewayv1.HTTPRouteFilterURLRewrite,
-							URLRewrite: &gatewayv1.HTTPURLRewriteFilter{
-								Path: &gatewayv1.HTTPPathModifier{
-									Type: gatewayv1.PrefixMatchHTTPPathModifier,
-									ReplacePrefixMatch: func() *string {
-										v := "/"
+				Hostnames: []gatewayv1.Hostname{
+					gatewayv1.Hostname(gim.Spec.Hostname),
+				},
+
+				Rules: []gatewayv1.HTTPRouteRule{
+					{
+						Matches: []gatewayv1.HTTPRouteMatch{
+							{
+								Path: &gatewayv1.HTTPPathMatch{
+									Type: func() *gatewayv1.PathMatchType {
+										t := gatewayv1.PathMatchPathPrefix
+										return &t
+									}(),
+									Value: func() *string {
+										v := "/api/create-room"
 										return &v
 									}(),
 								},
 							},
 						},
-					},
+	/*
+						Filters: []gatewayv1.HTTPRouteFilter{
+							{
+								Type: gatewayv1.HTTPRouteFilterURLRewrite,
+								URLRewrite: &gatewayv1.HTTPURLRewriteFilter{
+									Path: &gatewayv1.HTTPPathModifier{
+										Type: gatewayv1.PrefixMatchHTTPPathModifier,
+										ReplacePrefixMatch: func() *string {
+											v := "/"
+											return &v
+										}(),
+									},
+								},
+							},
+						},
+	*/
+						BackendRefs: []gatewayv1.HTTPBackendRef{
+							{
+								BackendRef: gatewayv1.BackendRef{
+									BackendObjectReference: gatewayv1.BackendObjectReference{
+										Name: gatewayv1.ObjectName(
+											"kube-game-operator-service",
+										),
+										Namespace: func() *gatewayv1.Namespace {
+											ns := gatewayv1.Namespace(namespace)
+											return &ns
+										}(),
+										Port: func() *gatewayv1.PortNumber {
+											p := gatewayv1.PortNumber(
+												80,
+											)
+											return &p
+										}(),
+									},
 
-					BackendRefs: []gatewayv1.HTTPBackendRef{
-						{
-							BackendRef: gatewayv1.BackendRef{
-								BackendObjectReference: gatewayv1.BackendObjectReference{
-									Name: gatewayv1.ObjectName(
-										"kube-game-operator-service",
-									),
-									Namespace: func() *gatewayv1.Namespace {
-										ns := gatewayv1.Namespace(namespace)
-										return &ns
-									}(),
-									Port: func() *gatewayv1.PortNumber {
-										p := gatewayv1.PortNumber(
-											80,
-										)
-										return &p
+									Weight: func() *int32 {
+										w := int32(1)
+										return &w
 									}(),
 								},
-
-								Weight: func() *int32 {
-									w := int32(1)
-									return &w
-								}(),
 							},
 						},
 					},
 				},
+			}
+
+			return controllerutil.SetControllerReference(gim, httpRoute, r.Scheme)
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	if gim.Spec.Routes == nil || gim.Spec.Routes.DeleteEnabled {
+		httpRoute := &gatewayv1.HTTPRoute{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      deploymentName(gim, backendComponent) + "-delete",
+				Namespace: gim.Namespace,
 			},
 		}
+		_, err := controllerutil.CreateOrUpdate(ctx, r.Client, httpRoute, func() error {
+			httpRoute.Labels = backendLabels(gim)
+			httpRoute.Spec = gatewayv1.HTTPRouteSpec{
+				CommonRouteSpec: gatewayv1.CommonRouteSpec{
+					ParentRefs: []gatewayv1.ParentReference{
+						{
+							Name: gatewayv1.ObjectName("operator-gateway"),
+						},
+					},
+				},
 
-		return controllerutil.SetControllerReference(gim, httpRoute, r.Scheme)
-	})
+				Hostnames: []gatewayv1.Hostname{
+					gatewayv1.Hostname(gim.Spec.Hostname),
+				},
 
-	return err
+				Rules: []gatewayv1.HTTPRouteRule{
+					{
+						Matches: []gatewayv1.HTTPRouteMatch{
+							{
+								Path: &gatewayv1.HTTPPathMatch{
+									Type: func() *gatewayv1.PathMatchType {
+										t := gatewayv1.PathMatchPathPrefix
+										return &t
+									}(),
+									Value: func() *string {
+										v := "/api/delete-room"
+										return &v
+									}(),
+								},
+							},
+						},
+	/*
+						Filters: []gatewayv1.HTTPRouteFilter{
+							{
+								Type: gatewayv1.HTTPRouteFilterURLRewrite,
+								URLRewrite: &gatewayv1.HTTPURLRewriteFilter{
+									Path: &gatewayv1.HTTPPathModifier{
+										Type: gatewayv1.PrefixMatchHTTPPathModifier,
+										ReplacePrefixMatch: func() *string {
+											v := "/"
+											return &v
+										}(),
+									},
+								},
+							},
+						},
+	*/
+						BackendRefs: []gatewayv1.HTTPBackendRef{
+							{
+								BackendRef: gatewayv1.BackendRef{
+									BackendObjectReference: gatewayv1.BackendObjectReference{
+										Name: gatewayv1.ObjectName(
+											"kube-game-operator-service",
+										),
+										Namespace: func() *gatewayv1.Namespace {
+											ns := gatewayv1.Namespace(namespace)
+											return &ns
+										}(),
+										Port: func() *gatewayv1.PortNumber {
+											p := gatewayv1.PortNumber(
+												80,
+											)
+											return &p
+										}(),
+									},
+
+									Weight: func() *int32 {
+										w := int32(1)
+										return &w
+									}(),
+								},
+							},
+						},
+					},
+				},
+			}
+
+			return controllerutil.SetControllerReference(gim, httpRoute, r.Scheme)
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (r *GameInstancesManagerReconciler) reconcileFrontendHTTPRoute(

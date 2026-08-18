@@ -8,6 +8,9 @@ spec:
   maxInstances: {{ .Values.maxInstances }}
   {{ end }}
   hostname: {{ .Values.hostname }}
+  routes:
+    createEnabled: {{ .Values.routes.createEnabled }}
+    deleteEnabled: {{ .Values.routes.deleteEnabled }}
   instance:
     repository: {{ .Values.instance.repository }}
     pullPolicy: {{ .Values.instance.pullPolicy }}
