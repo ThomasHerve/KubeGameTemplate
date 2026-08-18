@@ -11,6 +11,7 @@ print(host_key)
 clients = set()
 nicknames = {}
 server = None
+ever_connected = False  # Devient True dès qu'un premier client se connecte
 
 async def broadcast(message, exclude=None):
     if clients:
@@ -24,8 +25,9 @@ async def broadcast(message, exclude=None):
         )
 
 async def handler(websocket):
-    global server
+    global server, ever_connected
     clients.add(websocket)
+    ever_connected = True
     try:
         async for message in websocket:
             print("message reçu: " + message)
@@ -79,13 +81,23 @@ async def handler(websocket):
         if len(clients) == 0:
             stop()
 
+
+async def watchdog_no_connection(timeout=10):
+    """Si personne ne s'est connecté dans les `timeout` secondes, on arrête le serveur."""
+    await asyncio.sleep(timeout)
+    if not ever_connected:
+        print(f"Aucun client connecté après {timeout} secondes, arrêt du serveur.")
+        stop()
+
+
 async def main():
     async with websockets.serve(handler, "0.0.0.0", 8000):
+        asyncio.create_task(watchdog_no_connection(10))
         await asyncio.Future()  # run forever
 
 
 def stop():
-    print("Arrêt du serveur WebSocket car il n'y a plus de clients connectés.")
+    print("Arrêt du serveur WebSocket.")
     instance_name = os.environ["INSTANCE_NAME"]
     backend_url = os.environ["BACKEND_URL"]
     password = os.environ["PASSWORD"]
