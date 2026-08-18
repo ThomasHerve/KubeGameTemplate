@@ -36,6 +36,11 @@ type GameInstancesManagerSpec struct {
 
 	// Configuration of game instances.
 	Instance InstanceSpec `json:"instance"`
+
+	// Maximum number of concurrent game instances. If not set, there is no limit.
+	// +optional
+	// +kubebuilder:validation:Minimum=1
+	MaxInstances *int32 `json:"maxInstances,omitempty"`
 }
 
 type InstanceSpec struct {

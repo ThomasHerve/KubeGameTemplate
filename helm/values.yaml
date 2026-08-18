@@ -4,6 +4,8 @@
 
 namespace: operator
 hostname: game-frontend.thomas-herve.fr
+hasMaxInstances: true
+maxInstances: 1
 
 frontend:
   repository: thomasherve/kube-game-frontend

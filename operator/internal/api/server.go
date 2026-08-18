@@ -76,6 +76,18 @@ func handleCreateRoom(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Check max instances limit
+	if gim.Spec.MaxInstances != nil {
+		currentInstances, err := countExistingInstances(ctx, gim)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("failed to count existing instances: %v", err), http.StatusInternalServerError)
+			return
+		}
+		if currentInstances >= int(*gim.Spec.MaxInstances) {
+			http.Error(w, fmt.Sprintf("maximum number of instances (%d) reached", *gim.Spec.MaxInstances), http.StatusTooManyRequests)
+			return
+		}
+	}
 
 	repository := gim.Spec.Instance.Repository
 	pullPolicy := gim.Spec.Instance.PullPolicy
@@ -350,4 +362,27 @@ func randomID(length int) (string) {
 	}
 
 	return string(b)
+}
+
+// countExistingInstances counts the number of running game instances for a given GameInstancesManager
+func countExistingInstances(ctx context.Context, gim appsv1alpha1.GameInstancesManager) (int, error) {
+	var deploymentList appsv1.DeploymentList
+	
+	// List all deployments in the namespace
+	if err := kubeClient.List(ctx, &deploymentList, client.InNamespace(gim.Namespace)); err != nil {
+		return 0, err
+	}
+
+	count := 0
+	// Count deployments belonging to this GameInstancesManager
+	for _, deployment := range deploymentList.Items {
+		if label, ok := deployment.Labels["gameinstancesmanager"]; ok && label == gim.Name {
+			// Only count running instances (check if deployment has replicas)
+			if deployment.Status.Replicas > 0 {
+				count++
+			}
+		}
+	}
+
+	return count, nil
 }

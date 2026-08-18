@@ -4,6 +4,9 @@ metadata:
   name: operator-game-manager
   namespace: {{ .Values.namespace }}
 spec:
+  {{ if .Values.hasMaxInstances }}
+  maxInstances: {{ .Values.maxInstances }}
+  {{ end }}
   hostname: {{ .Values.hostname }}
   instance:
     repository: {{ .Values.instance.repository }}

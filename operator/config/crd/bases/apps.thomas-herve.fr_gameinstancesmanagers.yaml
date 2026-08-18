@@ -607,6 +607,12 @@ spec:
                 - internalPort
                 - repository
                 type: object
+              maxInstances:
+                description: Maximum number of concurrent game instances. If not set,
+                  there is no limit.
+                format: int32
+                minimum: 1
+                type: integer
             required:
             - frontend
             - hostname
