@@ -11,7 +11,6 @@ RUN chmod +x /docker-entrypoint.sh
 
 USER 101
 
-RUN mkdir /files
-COPY public/index.html /files/index.html
+COPY public/index.html /var/cache/nginx/index.html
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
