@@ -311,7 +311,6 @@ spec:
                     default: 1
                     description: |-
                       Number of replicas. Left nil-friendly for future autoscaling support
-                      (equivalent to the Helm `{{- if not autoscaling.enabled }}` guard).
                     format: int32
                     type: integer
                   repository:
